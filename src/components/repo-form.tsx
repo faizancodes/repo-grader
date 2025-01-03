@@ -9,6 +9,8 @@ import { AnalysisResults } from "./analysis-results";
 import type { CodeAnalysisResponse } from "@/utils/analyzeCode";
 import { analyzeRepository } from "@/app/actions";
 
+export const maxDuration = 60;
+
 export function RepoForm() {
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);

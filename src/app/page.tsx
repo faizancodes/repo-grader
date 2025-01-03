@@ -1,5 +1,7 @@
 import { RepoForm } from "@/components/repo-form";
 
+export const maxDuration = 60;
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white overflow-auto">
