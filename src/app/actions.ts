@@ -1,7 +1,5 @@
 "use server";
 
-import { exec } from "child_process";
-import { promisify } from "util";
 import { isValidGitHubUrl, cleanGitHubUrl } from "@/utils/github";
 import {
   createTempDir,
@@ -11,9 +9,9 @@ import {
 import { analyzeCode } from "@/utils/analyzeCode";
 import type { CodeAnalysisResponse } from "@/utils/analyzeCode";
 import { Logger } from "@/utils/logger";
+import simpleGit from "simple-git";
 
 const logger = new Logger("Server Action: AnalyzeRepo");
-const execAsync = promisify(exec);
 
 export async function analyzeRepository(url: string): Promise<{
   error?: string;
@@ -29,8 +27,18 @@ export async function analyzeRepository(url: string): Promise<{
 
     tempDir = await createTempDir();
     const cleanedUrl = cleanGitHubUrl(url);
+    const git = simpleGit();
 
-    await execAsync(`git clone ${cleanedUrl} ${tempDir}`);
+    try {
+      await git.clone(cleanedUrl, tempDir);
+    } catch (gitError) {
+      logger.error("Failed to clone repository", { error: gitError });
+      return {
+        error:
+          "Failed to clone repository. Please check the URL and try again.",
+      };
+    }
+
     const files = await readFilesRecursively(tempDir);
 
     logger.info("Read files from repository", {
