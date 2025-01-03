@@ -10,7 +10,7 @@ const envSchema = z.object({
   KV_REST_API_URL: z.string(),
   KV_REST_API_TOKEN: z.string(),
   KV_REST_API_READ_ONLY_TOKEN: z.string(),
-  NEXT_PUBLIC_API_URL: z.string(),
+  API_URL: z.string(),
 });
 
 // Function to validate environment variables
@@ -25,7 +25,7 @@ const validateEnv = () => {
       KV_REST_API_URL: process.env.KV_REST_API_URL,
       KV_REST_API_TOKEN: process.env.KV_REST_API_TOKEN,
       KV_REST_API_READ_ONLY_TOKEN: process.env.KV_REST_API_READ_ONLY_TOKEN,
-      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+      API_URL: process.env.API_URL,
     });
     return parsed;
   } catch (error) {

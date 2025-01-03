@@ -4,6 +4,8 @@ import { isValidGitHubUrl } from "@/utils/github";
 import { Logger } from "@/utils/logger";
 import { KVStorage } from "@/utils/kv-storage";
 import type { Job } from "@/types/jobs";
+import { fetchRepositoryContents } from "@/utils/github";
+import { analyzeCode } from "@/utils/analyzeCode";
 
 const logger = new Logger("Server Action: AnalyzeRepo");
 
@@ -20,13 +22,33 @@ export async function analyzeRepository(url: string): Promise<{
     // Create a new job
     const job = await KVStorage.createJob(url);
 
-    // Trigger the analysis process
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analyze`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jobId: job.id }),
-    }).catch(error => {
-      logger.error("Failed to trigger analysis job:", error);
+    // Start analysis in the background
+    (async () => {
+      try {
+        // Update job status to processing
+        await KVStorage.updateJob(job.id, { status: "processing" });
+
+        // Fetch repository contents
+        const files = await fetchRepositoryContents(url);
+
+        // Analyze code
+        const analysis = await analyzeCode(files);
+
+        // Update job with results
+        await KVStorage.updateJob(job.id, {
+          status: "completed",
+          result: analysis,
+        });
+      } catch (error) {
+        logger.error("Analysis failed:", error);
+        // Update job with error
+        await KVStorage.updateJob(job.id, {
+          status: "failed",
+          error: error instanceof Error ? error.message : "Analysis failed",
+        });
+      }
+    })().catch(error => {
+      logger.error("Background analysis failed:", error);
     });
 
     return { jobId: job.id };
