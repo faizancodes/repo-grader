@@ -34,7 +34,7 @@ function CodeBlock({
       >
         {({ style, tokens, getLineProps, getTokenProps }) => (
           <pre
-            className="text-sm p-3 rounded-md overflow-x-auto max-w-[calc(29vw)]"
+            className="text-sm p-3 rounded-md overflow-x-auto max-w-[800px]"
             style={{ ...style, margin: 0 }}
           >
             <code>
@@ -184,34 +184,51 @@ export function AnalysisResults({
   );
 
   return (
-    <div className="backdrop-blur-sm bg-white/5 rounded-lg border border-gray-800">
-      <div className="space-y-6 p-6">
-        <div className="space-y-4">
-          <div className="space-y-1">
-            <h2 className="text-xl font-semibold">Analysis Results</h2>
-            <p className="text-sm text-gray-400">
-              Found {issues.length} issues to review
-            </p>
-          </div>
-
-          <div className="p-4 bg-gray-900/50 rounded-lg border border-gray-800">
-            <div className="text-sm font-medium mb-2">Overall Feedback</div>
-            <p className="text-sm text-gray-300">{overallFeedback}</p>
-          </div>
-
-          <div className="flex items-center gap-2 text-sm flex-wrap">
-            {Object.entries(severityColors).map(([severity, colors]) => (
-              <div key={severity} className="flex items-center gap-1.5">
+    <div className="backdrop-blur-sm bg-gradient-to-b from-white/5 to-white/[0.02] rounded-xl border border-white/10 shadow-2xl">
+      <div className="space-y-8 p-8">
+        <div className="space-y-6">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <h2 className="text-2xl font-semibold tracking-tight bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+                Analysis Results
+              </h2>
+              <p className="text-sm text-gray-400 font-medium">
+                Found <span className="text-white">{issues.length}</span> issues
+                to review
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              {Object.entries(severityColors).map(([severity, colors]) => (
                 <div
-                  className={cn("w-2 h-2 rounded-full", colors.split(" ")[0])}
-                />
-                <span className="text-gray-400">
-                  {severity}
-                  {issuesBySeverity[severity]?.length > 0 &&
-                    ` (${issuesBySeverity[severity].length})`}
-                </span>
+                  key={severity}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-full",
+                    colors.split(" ")[0],
+                    "border",
+                    colors.split(" ")[1]
+                  )}
+                >
+                  <div className={cn("w-2 h-2 rounded-full bg-current")} />
+                  <span className="font-medium">
+                    {severity}
+                    {issuesBySeverity[severity]?.length > 0 &&
+                      ` (${issuesBySeverity[severity].length})`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative p-6 bg-black/20 rounded-lg border border-white/[0.08] overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 opacity-30" />
+            <div className="relative">
+              <div className="text-sm font-medium mb-2 text-white/70">
+                Overall Feedback
               </div>
-            ))}
+              <p className="text-base text-gray-300 leading-relaxed">
+                {overallFeedback}
+              </p>
+            </div>
           </div>
         </div>
 

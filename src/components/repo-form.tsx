@@ -80,7 +80,7 @@ export function RepoForm() {
                 value={url}
                 onChange={e => setUrl(e.target.value)}
                 disabled={isLoading}
-                className="pl-10 bg-gray-900/50 border-gray-800 text-white placeholder:text-gray-400"
+                className="pl-10 h-12 bg-gray-900/50 border-gray-800 text-white placeholder:text-gray-400"
               />
             </div>
             <Button
