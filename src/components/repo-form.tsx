@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { GitHubLogoIcon, UpdateIcon } from "@radix-ui/react-icons";
 import { AnalysisResults } from "./analysis-results";
 import type { CodeAnalysisResponse } from "@/utils/analyzeCode";
-import { analyzeRepository } from "@/app/actions";
+import { analyzeRepository, getAnalysisStatus } from "@/app/actions";
 
 function LoadingSkeleton() {
   return (
@@ -63,13 +63,39 @@ function LoadingSkeleton() {
   );
 }
 
-export const maxDuration = 60;
+const POLL_INTERVAL = 2000; // 2 seconds
+const MAX_POLL_TIME = 5 * 60 * 1000; // 5 minutes
 
 export function RepoForm() {
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [analysis, setAnalysis] = useState<CodeAnalysisResponse | null>(null);
   const { toast } = useToast();
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Cleanup polling on component unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+      if (pollTimeoutRef.current) {
+        clearTimeout(pollTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const stopPolling = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+    if (pollTimeoutRef.current) {
+      clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,30 +112,73 @@ export function RepoForm() {
 
     try {
       setIsLoading(true);
+      stopPolling();
+
       const result = await analyzeRepository(url);
 
       if (result.error) {
         throw new Error(result.error);
       }
 
-      if (result.analysis) {
-        setAnalysis(result.analysis);
+      if (result.jobId) {
+        // Set a timeout to stop polling after MAX_POLL_TIME
+        pollTimeoutRef.current = setTimeout(() => {
+          stopPolling();
+          setIsLoading(false);
+          toast({
+            title: "Error",
+            description: "Analysis timed out. Please try again.",
+            variant: "destructive",
+          });
+        }, MAX_POLL_TIME);
 
-        if (result.analysis.issues?.length > 0) {
-          toast({
-            title: "Analysis Complete",
-            description: `Found ${result.analysis.issues.length} issues to review`,
-            variant: "info",
-          });
-        } else {
-          toast({
-            title: "Analysis Complete",
-            description: "No issues found in the repository",
-            variant: "success",
-          });
-        }
+        // Start polling for job status
+        pollIntervalRef.current = setInterval(async () => {
+          try {
+            const status = await getAnalysisStatus(result.jobId!);
+
+            if (status.error) {
+              stopPolling();
+              setIsLoading(false);
+              throw new Error(status.error);
+            }
+
+            if (status.job?.status === "completed" && status.job.result) {
+              stopPolling();
+              setIsLoading(false);
+              setAnalysis(status.job.result);
+
+              toast({
+                title: "Analysis Complete",
+                description:
+                  status.job.result.issues?.length > 0
+                    ? `Found ${status.job.result.issues.length} issues to review`
+                    : "No issues found in the repository",
+                variant:
+                  status.job.result.issues?.length > 0 ? "info" : "success",
+              });
+            } else if (status.job?.status === "failed") {
+              stopPolling();
+              setIsLoading(false);
+              throw new Error(status.job.error || "Analysis failed");
+            }
+          } catch (error) {
+            stopPolling();
+            setIsLoading(false);
+            toast({
+              title: "Error",
+              description:
+                error instanceof Error
+                  ? error.message
+                  : "Failed to check analysis status",
+              variant: "destructive",
+            });
+          }
+        }, POLL_INTERVAL);
       }
     } catch (error) {
+      stopPolling();
+      setIsLoading(false);
       toast({
         title: "Error",
         description:
@@ -118,8 +187,6 @@ export function RepoForm() {
             : "Failed to analyze repository",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 

@@ -7,6 +7,10 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string(),
   NODE_ENV: z.string(),
   GITHUB_TOKEN: z.string(),
+  KV_REST_API_URL: z.string(),
+  KV_REST_API_TOKEN: z.string(),
+  KV_REST_API_READ_ONLY_TOKEN: z.string(),
+  NEXT_PUBLIC_API_URL: z.string(),
 });
 
 // Function to validate environment variables
@@ -18,6 +22,10 @@ const validateEnv = () => {
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
       NODE_ENV: process.env.NODE_ENV,
       GITHUB_TOKEN: process.env.GITHUB_TOKEN,
+      KV_REST_API_URL: process.env.KV_REST_API_URL,
+      KV_REST_API_TOKEN: process.env.KV_REST_API_TOKEN,
+      KV_REST_API_READ_ONLY_TOKEN: process.env.KV_REST_API_READ_ONLY_TOKEN,
+      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     });
     return parsed;
   } catch (error) {

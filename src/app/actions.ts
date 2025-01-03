@@ -1,15 +1,15 @@
 "use server";
 
-import { isValidGitHubUrl, fetchRepositoryContents } from "@/utils/github";
-import { analyzeCode } from "@/utils/analyzeCode";
-import type { CodeAnalysisResponse } from "@/utils/analyzeCode";
+import { isValidGitHubUrl } from "@/utils/github";
 import { Logger } from "@/utils/logger";
+import { KVStorage } from "@/utils/kv-storage";
+import type { Job } from "@/types/jobs";
 
 const logger = new Logger("Server Action: AnalyzeRepo");
 
 export async function analyzeRepository(url: string): Promise<{
   error?: string;
-  analysis?: CodeAnalysisResponse;
+  jobId?: string;
 }> {
   try {
     if (!url || !isValidGitHubUrl(url)) {
@@ -17,19 +17,39 @@ export async function analyzeRepository(url: string): Promise<{
       return { error: "Invalid GitHub repository URL" };
     }
 
-    const files = await fetchRepositoryContents(url);
+    // Create a new job
+    const job = await KVStorage.createJob(url);
 
-    logger.info("Read files from repository", {
-      files: files.length,
-      fileNames: files.map(f => f.path),
+    // Trigger the analysis process
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analyze`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobId: job.id }),
+    }).catch(error => {
+      logger.error("Failed to trigger analysis job:", error);
     });
 
-    const analysis = await analyzeCode(files);
-    return { analysis };
+    return { jobId: job.id };
   } catch (error) {
-    logger.error("Error processing repository:", error);
+    logger.error("Error creating analysis job:", error);
     const errorMessage =
-      error instanceof Error ? error.message : "Failed to process repository";
+      error instanceof Error ? error.message : "Failed to start analysis";
     return { error: errorMessage };
+  }
+}
+
+export async function getAnalysisStatus(jobId: string): Promise<{
+  error?: string;
+  job?: Job;
+}> {
+  try {
+    const job = await KVStorage.getJob(jobId);
+    if (!job) {
+      return { error: "Analysis job not found" };
+    }
+    return { job };
+  } catch (error) {
+    logger.error("Error fetching analysis status:", error);
+    return { error: "Failed to fetch analysis status" };
   }
 }
