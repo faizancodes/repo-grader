@@ -8,7 +8,6 @@ import {
   removeTempDir,
   readFilesRecursively,
 } from "@/utils/file-system";
-import type { FileContent } from "@/utils/file-system";
 import { analyzeCode } from "@/utils/analyzeCode";
 import type { CodeAnalysisResponse } from "@/utils/analyzeCode";
 import { Logger } from "@/utils/logger";
