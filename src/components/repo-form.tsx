@@ -70,6 +70,7 @@ export function RepoForm() {
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [analysis, setAnalysis] = useState<CodeAnalysisResponse | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
   const { toast } = useToast();
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -100,6 +101,7 @@ export function RepoForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAnalysis(null);
+    setJobId(null);
 
     if (!url.trim()) {
       toast({
@@ -121,6 +123,7 @@ export function RepoForm() {
       }
 
       if (result.jobId) {
+        setJobId(result.jobId);
         // Set a timeout to stop polling after MAX_POLL_TIME
         pollTimeoutRef.current = setTimeout(() => {
           stopPolling();
@@ -190,6 +193,17 @@ export function RepoForm() {
     }
   };
 
+  const handleShare = () => {
+    if (!jobId) return;
+
+    const shareUrl = `${window.location.origin}/analysis/${jobId}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast({
+      title: "Link Copied!",
+      description: "Share this link with others to view the analysis results",
+    });
+  };
+
   return (
     <div className="space-y-8 pb-8">
       <div className="backdrop-blur-xl bg-gradient-to-b from-white/[0.07] to-transparent rounded-2xl border border-white/[0.1] shadow-[0_0_1px_1px_rgba(0,0,0,0.3)] transition-all">
@@ -228,11 +242,36 @@ export function RepoForm() {
 
       {isLoading && <LoadingSkeleton />}
 
-      {analysis && (
-        <AnalysisResults
-          issues={analysis.issues}
-          overallFeedback={analysis.overallFeedback}
-        />
+      {analysis && jobId && (
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <button
+              onClick={handleShare}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                <polyline points="16 6 12 2 8 6" />
+                <line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+              Share Results
+            </button>
+          </div>
+          <AnalysisResults
+            issues={analysis.issues}
+            overallFeedback={analysis.overallFeedback}
+          />
+        </div>
       )}
     </div>
   );
