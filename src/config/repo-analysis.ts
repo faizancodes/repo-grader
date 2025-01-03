@@ -71,6 +71,10 @@ export const IGNORED_FILE_PATTERNS = [
   "*.h5",
   "*.hdf5",
   "*.feather",
+  "*.pdf",
+  "*.docx",
+  "*.xlsx",
+  "*.pptx",
 ] as const;
 
 // 5MB in bytes
