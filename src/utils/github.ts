@@ -60,7 +60,7 @@ export async function fetchRepositoryContents(
 
     if (repoData.private) {
       logger.error(`Repository ${owner}/${repo} is private`);
-      throw new Error('Cannot analyze private repositories');
+      throw new Error("Cannot analyze private repositories");
     }
 
     const defaultBranch = repoData.default_branch;

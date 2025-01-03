@@ -1,5 +1,10 @@
 import * as React from "react";
-import { Cross2Icon, CheckCircledIcon, ExclamationTriangleIcon, InfoCircledIcon } from "@radix-ui/react-icons";
+import {
+  Cross2Icon,
+  CheckCircledIcon,
+  ExclamationTriangleIcon,
+  InfoCircledIcon,
+} from "@radix-ui/react-icons";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
@@ -29,8 +34,10 @@ const toastVariants = cva(
         default: "border-border bg-background text-foreground",
         destructive:
           "destructive group border-red-500/30 bg-red-50 text-red-900 dark:border-red-500/30 dark:bg-red-900/30 dark:text-red-50",
-        success: "border-green-500/30 bg-green-50 text-green-900 dark:border-green-500/30 dark:bg-green-900/30 dark:text-green-50",
-        warning: "border-yellow-500/30 bg-yellow-50 text-yellow-900 dark:border-yellow-500/30 dark:bg-yellow-900/30 dark:text-yellow-50",
+        success:
+          "border-green-500/30 bg-green-50 text-green-900 dark:border-green-500/30 dark:bg-green-900/30 dark:text-green-50",
+        warning:
+          "border-yellow-500/30 bg-yellow-50 text-yellow-900 dark:border-yellow-500/30 dark:bg-yellow-900/30 dark:text-yellow-50",
         info: "border-blue-500/30 bg-blue-50 text-blue-900 dark:border-blue-500/30 dark:bg-blue-900/30 dark:text-blue-50",
       },
     },
@@ -45,10 +52,16 @@ const Toast = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
     VariantProps<typeof toastVariants>
 >(({ className, variant, children, ...props }, ref) => {
-  const icon = variant === 'destructive' ? <ExclamationTriangleIcon className="h-5 w-5 text-red-600 dark:text-red-400" /> :
-              variant === 'success' ? <CheckCircledIcon className="h-5 w-5 text-green-600 dark:text-green-400" /> :
-              variant === 'warning' ? <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-400" /> :
-              variant === 'info' ? <InfoCircledIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" /> : null
+  const icon =
+    variant === "destructive" ? (
+      <ExclamationTriangleIcon className="h-5 w-5 text-red-600 dark:text-red-400" />
+    ) : variant === "success" ? (
+      <CheckCircledIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+    ) : variant === "warning" ? (
+      <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+    ) : variant === "info" ? (
+      <InfoCircledIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+    ) : null;
 
   return (
     <ToastPrimitives.Root
@@ -57,11 +70,9 @@ const Toast = React.forwardRef<
       {...props}
     >
       {icon}
-      <div className="flex-1 flex flex-col gap-1">
-        {children}
-      </div>
+      <div className="flex-1 flex flex-col gap-1">{children}</div>
     </ToastPrimitives.Root>
-  )
+  );
 });
 Toast.displayName = ToastPrimitives.Root.displayName;
 

@@ -10,8 +10,8 @@ function formatCode(code: string) {
   if (!code) return "";
 
   // Remove language identifier backticks if present
-  code = code.replace(/^```(tsx|python|typescript|js|javascript)\n/, "")
-  code = code.replace(/```$/, "")
+  code = code.replace(/^```(tsx|python|typescript|js|javascript)\n/, "");
+  code = code.replace(/```$/, "");
 
   return code
     .split("\n")
