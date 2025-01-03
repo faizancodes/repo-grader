@@ -114,15 +114,18 @@ export async function readFilesRecursively(
  * Creates a temporary directory for cloning repositories
  */
 export async function createTempDir(): Promise<string> {
-  const tempDir = path.join(process.cwd(), "temp", Date.now().toString());
-  logger.info(`Creating temporary directory: ${tempDir}`);
+  const isProd = process.env.NODE_ENV !== 'development'
+  const baseDir = isProd ? '/tmp' : path.join(process.cwd(), 'temp')
+  const tempDir = path.join(baseDir, Date.now().toString())
+  
+  logger.info(`Creating temporary directory: ${tempDir} in ${isProd ? 'production' : 'development'} mode`)
   try {
-    await fs.mkdir(tempDir, { recursive: true });
-    logger.debug(`Successfully created temporary directory: ${tempDir}`);
-    return tempDir;
+    await fs.mkdir(tempDir, { recursive: true })
+    logger.debug(`Successfully created temporary directory: ${tempDir}`)
+    return tempDir
   } catch (error) {
-    logger.error(`Failed to create temporary directory: ${tempDir}`, error);
-    throw error;
+    logger.error(`Failed to create temporary directory: ${tempDir}`, error)
+    throw error
   }
 }
 
@@ -140,13 +143,17 @@ export async function removeTempDir(dir: string): Promise<void> {
 }
 
 export function formatFileContent(fileContent: FileContent) {
-  logger.debug(`Formatting file content for: ${fileContent.path}`);
+  logger.debug(`Formatting file content for: ${fileContent.path}`)
 
-  // Extract path after /temp/<number>/
-  const pathParts = fileContent.path.split("/temp/");
-  const relativePath = pathParts[1]?.split("/", 2)[1]
-    ? pathParts[1].split("/", 2)[1]
-    : fileContent.path;
+  // Handle both /tmp and /temp paths
+  const isProd = process.env.NODE_ENV !== 'development'
+  const baseDirPattern = isProd ? '/tmp/' : '/temp/'
+  
+  // Extract path after base directory
+  const pathParts = fileContent.path.split(baseDirPattern)
+  const relativePath = pathParts[1]?.split('/', 2)[1]
+    ? pathParts[1].split('/', 2)[1]
+    : fileContent.path
 
-  return `<${relativePath}>\n\n${fileContent.content}\n\n</${relativePath}>\n\n`;
+  return `<${relativePath}>\n\n${fileContent.content}\n\n</${relativePath}>\n\n`
 }
