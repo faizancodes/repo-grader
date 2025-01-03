@@ -52,11 +52,17 @@ export async function fetchRepositoryContents(
     const { owner, repo } = extractRepoInfo(url);
     logger.info(`Fetching contents for ${owner}/${repo}`);
 
-    // Get default branch
+    // Get repository data and check if private
     const { data: repoData } = await octokit.rest.repos.get({
       owner,
       repo,
     });
+
+    if (repoData.private) {
+      logger.error(`Repository ${owner}/${repo} is private`);
+      throw new Error('Cannot analyze private repositories');
+    }
+
     const defaultBranch = repoData.default_branch;
 
     // Get tree recursively

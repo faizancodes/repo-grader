@@ -13,7 +13,7 @@ export default function Home() {
             </h1>
             <p className="text-gray-400 max-w-[600px] mx-auto">
               Get feedback on your code quality and get suggestions on how to
-              improve it
+              improve it.
             </p>
           </div>
           <RepoForm />

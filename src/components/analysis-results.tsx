@@ -9,6 +9,10 @@ import { Highlight, themes, type Language } from "prism-react-renderer";
 function formatCode(code: string) {
   if (!code) return "";
 
+  // Remove language identifier backticks if present
+  code = code.replace(/^```(tsx|python|typescript|js|javascript)\n/, "")
+  code = code.replace(/```$/, "")
+
   return code
     .split("\n")
     .map(line => line.trimEnd()) // Only trim trailing spaces
