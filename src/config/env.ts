@@ -6,6 +6,7 @@ const envSchema = z.object({
   GOOGLE_API_KEY: z.string(),
   OPENAI_API_KEY: z.string(),
   NODE_ENV: z.string(),
+  GITHUB_TOKEN: z.string(),
 });
 
 // Function to validate environment variables
@@ -16,6 +17,7 @@ const validateEnv = () => {
       GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
       NODE_ENV: process.env.NODE_ENV,
+      GITHUB_TOKEN: process.env.GITHUB_TOKEN,
     });
     return parsed;
   } catch (error) {
