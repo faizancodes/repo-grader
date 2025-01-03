@@ -27,15 +27,23 @@ export async function analyzeRepository(url: string): Promise<{
 
     tempDir = await createTempDir();
     const cleanedUrl = cleanGitHubUrl(url);
-    const git = simpleGit();
+    const git = simpleGit({
+      timeout: {
+        block: 10000, // 10 seconds
+      },
+      binary: "git",
+      maxConcurrentProcesses: 1,
+    });
 
     try {
-      await git.clone(cleanedUrl, tempDir);
+      await git.clone(cleanedUrl, tempDir, ["--depth", "1", "--single-branch"]);
     } catch (gitError) {
-      logger.error("Failed to clone repository", { error: gitError });
+      logger.error("Failed to clone repository", {
+        error: gitError instanceof Error ? gitError.message : "Unknown error",
+        stack: gitError instanceof Error ? gitError.stack : "Unknown stack",
+      });
       return {
-        error:
-          "Failed to clone repository. Please check the URL and try again.",
+        error: `Failed to clone repository. Please check the URL and try again.`,
       };
     }
 
