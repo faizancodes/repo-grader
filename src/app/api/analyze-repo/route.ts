@@ -46,6 +46,12 @@ export async function POST(
 
     await execAsync(`git clone ${cleanedUrl} ${tempDir}`);
     const files = await readFilesRecursively(tempDir);
+
+    logger.info("Read files from repository", {
+      files: files.length,
+      fileNames: files.map(f => f.path),
+    });
+
     const analysis = await analyzeCode(files);
     return NextResponse.json({ analysis });
   } catch (error) {

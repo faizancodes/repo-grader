@@ -4,6 +4,62 @@ import { useState } from "react";
 import { CodeAnalysisIssue } from "@/utils/analyzeCode";
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
+import {
+  Highlight,
+  themes,
+  type Language,
+} from "prism-react-renderer";
+        
+function formatCode(code: string, language: Language = "typescript") {
+  if (!code) return "";
+
+  return code
+    .split("\n")
+    .map(line => line.trimEnd()) // Only trim trailing spaces
+    .filter(line => line.length > 0) // Remove empty lines
+    .join("\n");
+}
+
+function CodeBlock({
+  code,
+  language = "typescript",
+}: {
+  code: string;
+  language?: Language;
+}) {
+  const formattedCode = formatCode(code, language);
+
+  return (
+    <div className="relative w-full">
+      <Highlight
+        theme={themes.nightOwl}
+        code={formattedCode}
+        language={language}
+      >
+        {({ className, style, tokens, getLineProps, getTokenProps }) => (
+          <pre
+            className="text-sm bg-black/50 p-3 rounded-md overflow-x-auto max-w-full"
+            style={{ ...style, margin: 0 }}
+          >
+            <code>
+              {tokens.map((line, lineIdx) => (
+                <div
+                  key={lineIdx}
+                  {...getLineProps({ line })}
+                  className="whitespace-pre"
+                >
+                  {line.map((token, tokenIdx) => (
+                    <span key={tokenIdx} {...getTokenProps({ token })} />
+                  ))}
+                </div>
+              ))}
+            </code>
+          </pre>
+        )}
+      </Highlight>
+    </div>
+  );
+}
 
 interface AnalysisResultsProps {
   issues: CodeAnalysisIssue[];
@@ -60,18 +116,27 @@ function IssueCard({ issue }: { issue: CodeAnalysisIssue }) {
       </button>
 
       {isExpanded && (
-        <div className="px-4 pb-4 space-y-4 border-t border-white/10">
+        <div className="px-4 pb-4 space-y-4 border-t border-white/10 overflow-hidden">
           <div className="pt-4">
             <div className="text-sm font-medium mb-2">Issue</div>
-            <div className="text-sm text-gray-300">{issue.explanation}</div>
+            <div className="text-sm text-gray-300 break-words">
+              {issue.explanation}
+            </div>
           </div>
 
           {issue.codeSnippet && (
-            <div>
+            <div className="w-full">
               <div className="text-sm font-medium mb-2">Code Snippet</div>
-              <pre className="text-sm bg-black/50 p-3 rounded-md overflow-x-auto whitespace-pre-wrap break-words">
-                <code>{issue.codeSnippet}</code>
-              </pre>
+              <div className="max-w-full overflow-hidden rounded-md">
+                <CodeBlock
+                  code={issue.codeSnippet}
+                  language={
+                    issue.fileLocation?.toLowerCase().endsWith(".py")
+                      ? "python"
+                      : "typescript"
+                  }
+                />
+              </div>
             </div>
           )}
 
@@ -81,11 +146,18 @@ function IssueCard({ issue }: { issue: CodeAnalysisIssue }) {
           </div>
 
           {issue.codeExample && (
-            <div>
+            <div className="w-full">
               <div className="text-sm font-medium mb-2">Example Fix</div>
-              <pre className="text-sm bg-black/50 p-3 rounded-md overflow-x-auto whitespace-pre-wrap break-words">
-                <code>{issue.codeExample}</code>
-              </pre>
+              <div className="max-w-full overflow-hidden rounded-md">
+                <CodeBlock
+                  code={issue.codeExample}
+                  language={
+                    issue.fileLocation?.toLowerCase().endsWith(".py")
+                      ? "python"
+                      : "typescript"
+                  }
+                />
+              </div>
             </div>
           )}
 
@@ -116,49 +188,51 @@ export function AnalysisResults({
   );
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-xl font-semibold">Analysis Results</h2>
-          <p className="text-sm text-gray-400">
-            Found {issues.length} issues to review
-          </p>
+    <div className="backdrop-blur-sm bg-white/5 rounded-lg border border-gray-800">
+      <div className="space-y-6 p-6">
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <h2 className="text-xl font-semibold">Analysis Results</h2>
+            <p className="text-sm text-gray-400">
+              Found {issues.length} issues to review
+            </p>
+          </div>
+
+          <div className="p-4 bg-gray-900/50 rounded-lg border border-gray-800">
+            <div className="text-sm font-medium mb-2">Overall Feedback</div>
+            <p className="text-sm text-gray-300">{overallFeedback}</p>
+          </div>
+
+          <div className="flex items-center gap-2 text-sm flex-wrap">
+            {Object.entries(severityColors).map(([severity, colors]) => (
+              <div key={severity} className="flex items-center gap-1.5">
+                <div
+                  className={cn("w-2 h-2 rounded-full", colors.split(" ")[0])}
+                />
+                <span className="text-gray-400">
+                  {severity}
+                  {issuesBySeverity[severity]?.length > 0 &&
+                    ` (${issuesBySeverity[severity].length})`}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="p-4 bg-gray-900/50 rounded-lg border border-gray-800">
-          <div className="text-sm font-medium mb-2">Overall Feedback</div>
-          <p className="text-sm text-gray-300">{overallFeedback}</p>
+        <div className="grid gap-3">
+          {Object.entries(issuesBySeverity)
+            .sort(([a], [b]) => {
+              const order = ["Critical", "High", "Medium", "Low"];
+              return order.indexOf(a) - order.indexOf(b);
+            })
+            .map(([severity, severityIssues]) => (
+              <div key={severity} className="space-y-2">
+                {severityIssues.map((issue, index) => (
+                  <IssueCard key={index} issue={issue} />
+                ))}
+              </div>
+            ))}
         </div>
-
-        <div className="flex items-center gap-2 text-sm flex-wrap">
-          {Object.entries(severityColors).map(([severity, colors]) => (
-            <div key={severity} className="flex items-center gap-1.5">
-              <div
-                className={cn("w-2 h-2 rounded-full", colors.split(" ")[0])}
-              />
-              <span className="text-gray-400">
-                {severity}
-                {issuesBySeverity[severity]?.length > 0 &&
-                  ` (${issuesBySeverity[severity].length})`}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid gap-3">
-        {Object.entries(issuesBySeverity)
-          .sort(([a], [b]) => {
-            const order = ["Critical", "High", "Medium", "Low"];
-            return order.indexOf(a) - order.indexOf(b);
-          })
-          .map(([severity, severityIssues]) => (
-            <div key={severity} className="space-y-2">
-              {severityIssues.map((issue, index) => (
-                <IssueCard key={index} issue={issue} />
-              ))}
-            </div>
-          ))}
       </div>
     </div>
   );

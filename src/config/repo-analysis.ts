@@ -57,7 +57,24 @@ export const IGNORED_FILE_PATTERNS = [
   "*.psd",
   "*.ai",
   "*.sketch",
+  "*.csv",
+  "*.xls",
+  "*.xlsx",
+  "*.tsv",
+  "*.xml",
+  "*.yaml",
+  "*.yml",
+  "*.dump",
+  "*.sql",
+  "*.parquet",
+  "*.arrow",
+  "*.h5",
+  "*.hdf5",
+  "*.feather",
 ] as const;
 
 // 5MB in bytes
 export const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+// Maximum number of lines allowed in a file
+export const MAX_LINES = 10_000;

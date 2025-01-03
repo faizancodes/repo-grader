@@ -82,17 +82,7 @@ ANALYSIS CATEGORIES:
    - Identify improper error exposure
    - Flag hardcoded credentials or URLs
 
-7. Accessibility & SEO
-   - Check for missing ARIA labels
-   - Identify improper heading hierarchy
-   - Flag missing alt texts on images
-   - Check for keyboard navigation support
-   - Identify missing meta tags
-   - Flag improper semantic HTML usage
-   - Check for proper color contrast
-   - Identify missing focus management
-
-8. Testing & Error Handling
+7. Testing & Error Handling
    - Flag missing unit tests for critical components
    - Identify improper error boundary usage
    - Check for missing integration tests
@@ -102,7 +92,7 @@ ANALYSIS CATEGORIES:
    - Flag improper assertion usage
    - Identify missing edge case handling
 
-9. Code Style & Maintainability
+8. Code Style & Maintainability
    - Check for consistent naming conventions
    - Identify duplicated code
    - Flag complex conditional rendering
@@ -112,7 +102,7 @@ ANALYSIS CATEGORIES:
    - Check for consistent code formatting
    - Identify overly complex functions (> 20 lines)
 
-10. Next.js Specific
+9. Next.js Specific
     - Check for proper use of app router features
     - Identify improper metadata implementation
     - Flag improper route handlers
@@ -136,7 +126,6 @@ CRITICAL PATTERNS TO FLAG:
 - Missing accessibility attributes
 - Improper form validation
 - Unnecessary client-side JavaScript
-- Missing proper SEO metadata
 - Improper API route protection
 - Unhandled promise rejections
 - Missing proper TypeScript types
@@ -185,6 +174,7 @@ EXAMPLE RESPONSE:
 Analyze the code with extreme attention to detail and provide actionable, specific feedback that will help developers improve their code quality. 
 
 Remember to ALWAYS respond with valid JSON matching the schema above.
+Remember to ALWAYS preserve the formatting of the code snippets and examples.
 `;
 
 export async function analyzeCode(files: FileContent[]) {

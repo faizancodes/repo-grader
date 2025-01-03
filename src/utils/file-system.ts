@@ -5,6 +5,7 @@ import {
   IGNORED_DIRECTORIES,
   IGNORED_FILE_PATTERNS,
   MAX_FILE_SIZE,
+  MAX_LINES,
 } from "@/config/repo-analysis";
 
 const logger = new Logger("FileSystem");
@@ -83,6 +84,16 @@ export async function readFilesRecursively(
 
         logger.debug(`Reading file: ${fullPath}`);
         const content = await fs.readFile(fullPath, "utf-8");
+
+        // Check line count
+        const lineCount = content.split("\n").length;
+        if (lineCount > MAX_LINES) {
+          logger.warn(
+            `Skipping file with too many lines ${fullPath} (${lineCount} lines)`
+          );
+          continue;
+        }
+
         files.push({ path: fullPath, content });
       } catch (error) {
         logger.error(`Error reading file ${fullPath}`, error);
