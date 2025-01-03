@@ -1,10 +1,13 @@
 import fs from "fs/promises";
 import path from "path";
+import { Logger } from "./logger";
 import {
   IGNORED_DIRECTORIES,
   IGNORED_FILE_PATTERNS,
   MAX_FILE_SIZE,
 } from "@/config/repo-analysis";
+
+const logger = new Logger("FileSystem");
 
 export interface FileContent {
   path: string;
@@ -21,18 +24,27 @@ export function shouldIgnorePath(
   const basename = path.basename(filePath);
 
   if (isDirectory) {
-    return IGNORED_DIRECTORIES.includes(
+    const shouldIgnore = IGNORED_DIRECTORIES.includes(
       basename as (typeof IGNORED_DIRECTORIES)[number]
     );
+    if (shouldIgnore) {
+      logger.debug(`Ignoring directory: ${filePath}`);
+    }
+    return shouldIgnore;
   }
 
-  return IGNORED_FILE_PATTERNS.some(pattern => {
+  const shouldIgnore = IGNORED_FILE_PATTERNS.some(pattern => {
     if (pattern.includes("*")) {
       const regex = new RegExp("^" + pattern.replace("*", ".*") + "$");
       return regex.test(basename);
     }
     return basename === pattern;
   });
+
+  if (shouldIgnore) {
+    logger.debug(`Ignoring file: ${filePath}`);
+  }
+  return shouldIgnore;
 }
 
 /**
@@ -42,9 +54,11 @@ export async function readFilesRecursively(
   dir: string
 ): Promise<FileContent[]> {
   const files: FileContent[] = [];
+  logger.info(`Starting to read directory: ${dir}`);
 
   try {
     const entries = await fs.readdir(dir, { withFileTypes: true });
+    logger.debug(`Found ${entries.length} entries in directory: ${dir}`);
 
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
@@ -52,6 +66,7 @@ export async function readFilesRecursively(
       if (entry.isDirectory()) {
         if (shouldIgnorePath(fullPath, true)) continue;
 
+        logger.debug(`Processing subdirectory: ${fullPath}`);
         const subFiles = await readFilesRecursively(fullPath);
         files.push(...subFiles);
         continue;
@@ -62,20 +77,24 @@ export async function readFilesRecursively(
       try {
         const stats = await fs.stat(fullPath);
         if (stats.size > MAX_FILE_SIZE) {
-          console.warn(`Skipping large file ${fullPath} (${stats.size} bytes)`);
+          logger.warn(`Skipping large file ${fullPath} (${stats.size} bytes)`);
           continue;
         }
 
+        logger.debug(`Reading file: ${fullPath}`);
         const content = await fs.readFile(fullPath, "utf-8");
         files.push({ path: fullPath, content });
       } catch (error) {
-        console.error(`Error reading file ${fullPath}:`, error);
+        logger.error(`Error reading file ${fullPath}`, error);
       }
     }
 
+    logger.info(
+      `Successfully processed directory: ${dir}, found ${files.length} files`
+    );
     return files;
   } catch (error) {
-    console.error(`Error reading directory ${dir}:`, error);
+    logger.error(`Error reading directory ${dir}`, error);
     return files;
   }
 }
@@ -85,17 +104,38 @@ export async function readFilesRecursively(
  */
 export async function createTempDir(): Promise<string> {
   const tempDir = path.join(process.cwd(), "temp", Date.now().toString());
-  await fs.mkdir(tempDir, { recursive: true });
-  return tempDir;
+  logger.info(`Creating temporary directory: ${tempDir}`);
+  try {
+    await fs.mkdir(tempDir, { recursive: true });
+    logger.debug(`Successfully created temporary directory: ${tempDir}`);
+    return tempDir;
+  } catch (error) {
+    logger.error(`Failed to create temporary directory: ${tempDir}`, error);
+    throw error;
+  }
 }
 
 /**
  * Safely removes a directory and its contents
  */
 export async function removeTempDir(dir: string): Promise<void> {
+  logger.info(`Removing temporary directory: ${dir}`);
   try {
     await fs.rm(dir, { recursive: true, force: true });
+    logger.debug(`Successfully removed temporary directory: ${dir}`);
   } catch (error) {
-    console.error(`Error removing directory ${dir}:`, error);
+    logger.error(`Failed to remove temporary directory: ${dir}`, error);
   }
+}
+
+export function formatFileContent(fileContent: FileContent) {
+  logger.debug(`Formatting file content for: ${fileContent.path}`);
+
+  // Extract path after /temp/<number>/
+  const pathParts = fileContent.path.split("/temp/");
+  const relativePath = pathParts[1]?.split("/", 2)[1]
+    ? pathParts[1].split("/", 2)[1]
+    : fileContent.path;
+
+  return `<${relativePath}>\n\n${fileContent.content}\n\n</${relativePath}>\n\n`;
 }

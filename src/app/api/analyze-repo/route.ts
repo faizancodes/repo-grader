@@ -8,12 +8,18 @@ import {
   readFilesRecursively,
 } from "@/utils/file-system";
 import type { FileContent } from "@/utils/file-system";
+import { analyzeCode } from "@/utils/analyzeCode";
+import type { CodeAnalysisResponse } from "@/utils/analyzeCode";
+import { Logger } from "@/utils/logger";
+
+const logger = new Logger("API: AnalyzeRepo");
 
 const execAsync = promisify(exec);
 
 interface AnalyzeRepoResponse {
   files?: FileContent[];
   error?: string;
+  analysis?: CodeAnalysisResponse;
 }
 
 /**
@@ -28,6 +34,7 @@ export async function POST(
     const { url } = await request.json();
 
     if (!url || !isValidGitHubUrl(url)) {
+      logger.error("Invalid GitHub repository URL", { url });
       return NextResponse.json(
         { error: "Invalid GitHub repository URL" },
         { status: 400 }
@@ -39,10 +46,10 @@ export async function POST(
 
     await execAsync(`git clone ${cleanedUrl} ${tempDir}`);
     const files = await readFilesRecursively(tempDir);
-
-    return NextResponse.json({ files });
+    const analysis = await analyzeCode(files);
+    return NextResponse.json({ analysis });
   } catch (error) {
-    console.error("Error processing repository:", error);
+    logger.error("Error processing repository:", error);
 
     const errorMessage =
       error instanceof Error ? error.message : "Failed to process repository";
