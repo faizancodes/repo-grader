@@ -5,14 +5,14 @@ import Link from "next/link";
 
 export const maxDuration = 60;
 
-interface Props {
-  params: {
-    jobId: string;
-  };
+interface PageProps {
+  params: Promise<{ jobId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function AnalysisPage({ params }: Props) {
-  const job = await KVStorage.getJob(params.jobId);
+export default async function AnalysisPage({ params }: PageProps) {
+  const pageParams = await params;
+  const job = await KVStorage.getJob(pageParams.jobId);
 
   if (!job || job.status !== "completed" || !job.result) {
     notFound();

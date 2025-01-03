@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "GitHub Repo Analyzer",
-  description: "Analyze GitHub repositories and extract their contents",
+  description: "Get a detailed analysis of your GitHub repository",
 };
 
 export default function RootLayout({

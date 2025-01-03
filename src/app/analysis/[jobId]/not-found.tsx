@@ -15,8 +15,8 @@ export default function NotFound() {
               Analysis Not Found
             </h1>
             <p className="text-lg text-gray-400 max-w-[600px] mx-auto">
-              The analysis results you're looking for don't exist or haven't
-              completed yet.
+              The analysis results you&apos;re looking for don&apos;t exist or
+              haven&apos;t completed yet.
             </p>
             <div className="pt-4">
               <Link
