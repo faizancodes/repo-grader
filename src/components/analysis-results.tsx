@@ -4,13 +4,9 @@ import { useState } from "react";
 import { CodeAnalysisIssue } from "@/utils/analyzeCode";
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
-import {
-  Highlight,
-  themes,
-  type Language,
-} from "prism-react-renderer";
-        
-function formatCode(code: string, language: Language = "typescript") {
+import { Highlight, themes, type Language } from "prism-react-renderer";
+
+function formatCode(code: string) {
   if (!code) return "";
 
   return code
@@ -27,7 +23,7 @@ function CodeBlock({
   code: string;
   language?: Language;
 }) {
-  const formattedCode = formatCode(code, language);
+  const formattedCode = formatCode(code);
 
   return (
     <div className="relative w-full">
@@ -36,9 +32,9 @@ function CodeBlock({
         code={formattedCode}
         language={language}
       >
-        {({ className, style, tokens, getLineProps, getTokenProps }) => (
+        {({ style, tokens, getLineProps, getTokenProps }) => (
           <pre
-            className="text-sm bg-black/50 p-3 rounded-md overflow-x-auto max-w-full"
+            className="text-sm p-3 rounded-md overflow-x-auto max-w-[calc(29vw)]"
             style={{ ...style, margin: 0 }}
           >
             <code>

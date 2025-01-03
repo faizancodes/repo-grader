@@ -10,8 +10,8 @@ export default function Home() {
               GitHub Repo Analyzer
             </h1>
             <p className="text-gray-400 max-w-[600px] mx-auto">
-              Analyze any GitHub repository instantly. Get insights about code
-              structure, dependencies, and more.
+              Get feedback on your code quality and get suggestions on how to
+              improve it
             </p>
           </div>
           <RepoForm />
