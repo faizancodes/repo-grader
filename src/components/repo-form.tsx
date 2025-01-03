@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { GitHubLogoIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { AnalysisResults } from "./analysis-results";
 import type { CodeAnalysisResponse } from "@/utils/analyzeCode";
+import { analyzeRepository } from "@/app/actions";
 
 export function RepoForm() {
   const [url, setUrl] = useState("");
@@ -29,32 +30,26 @@ export function RepoForm() {
 
     try {
       setIsLoading(true);
-      const response = await fetch("/api/analyze-repo", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url }),
-      });
+      const result = await analyzeRepository(url);
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to analyze repository");
+      if (result.error) {
+        throw new Error(result.error);
       }
 
-      const data = await response.json();
-      setAnalysis(data.analysis);
+      if (result.analysis) {
+        setAnalysis(result.analysis);
 
-      if (data.analysis?.issues?.length > 0) {
-        toast({
-          title: "Analysis Complete",
-          description: `Found ${data.analysis.issues.length} issues to review`,
-        });
-      } else {
-        toast({
-          title: "Analysis Complete",
-          description: "No issues found in the repository",
-        });
+        if (result.analysis.issues?.length > 0) {
+          toast({
+            title: "Analysis Complete",
+            description: `Found ${result.analysis.issues.length} issues to review`,
+          });
+        } else {
+          toast({
+            title: "Analysis Complete",
+            description: "No issues found in the repository",
+          });
+        }
       }
     } catch (error) {
       toast({

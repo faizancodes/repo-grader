@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+"use server";
+
 import { exec } from "child_process";
 import { promisify } from "util";
 import { isValidGitHubUrl, cleanGitHubUrl } from "@/utils/github";
@@ -12,33 +13,19 @@ import { analyzeCode } from "@/utils/analyzeCode";
 import type { CodeAnalysisResponse } from "@/utils/analyzeCode";
 import { Logger } from "@/utils/logger";
 
-const logger = new Logger("API: AnalyzeRepo");
-
+const logger = new Logger("Server Action: AnalyzeRepo");
 const execAsync = promisify(exec);
 
-interface AnalyzeRepoResponse {
-  files?: FileContent[];
+export async function analyzeRepository(url: string): Promise<{
   error?: string;
   analysis?: CodeAnalysisResponse;
-}
-
-/**
- * Analyzes a GitHub repository by cloning it and reading its contents
- */
-export async function POST(
-  request: Request
-): Promise<NextResponse<AnalyzeRepoResponse>> {
+}> {
   let tempDir: string | null = null;
 
   try {
-    const { url } = await request.json();
-
     if (!url || !isValidGitHubUrl(url)) {
       logger.error("Invalid GitHub repository URL", { url });
-      return NextResponse.json(
-        { error: "Invalid GitHub repository URL" },
-        { status: 400 }
-      );
+      return { error: "Invalid GitHub repository URL" };
     }
 
     tempDir = await createTempDir();
@@ -53,14 +40,12 @@ export async function POST(
     });
 
     const analysis = await analyzeCode(files);
-    return NextResponse.json({ analysis });
+    return { analysis };
   } catch (error) {
     logger.error("Error processing repository:", error);
-
     const errorMessage =
       error instanceof Error ? error.message : "Failed to process repository";
-
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return { error: errorMessage };
   } finally {
     if (tempDir) {
       await removeTempDir(tempDir);
