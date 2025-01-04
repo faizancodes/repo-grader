@@ -4,6 +4,7 @@ import type { FileContent } from "./file-system";
 import {
   IGNORED_DIRECTORIES,
   IGNORED_FILE_PATTERNS,
+  IGNORED_PATH_PATTERNS,
 } from "../config/repo-analysis";
 import { env } from "../config/env";
 
@@ -78,23 +79,44 @@ export async function fetchRepositoryContents(
 
     // Helper function to check if path should be ignored
     const shouldIgnorePath = (path: string): boolean => {
+      // First check if path contains any ignored patterns
+      const normalizedPath = path.replace(/\\/g, "/");
+      for (const pattern of IGNORED_PATH_PATTERNS) {
+        const pathParts = normalizedPath.split("/");
+        for (let i = 0; i < pathParts.length; i++) {
+          const parentPath = pathParts.slice(0, i + 1).join("/");
+          if (parentPath.toLowerCase().endsWith(pattern.toLowerCase())) {
+            logger.debug(
+              `Ignoring GitHub file in path pattern ${pattern}: ${path}`
+            );
+            return true;
+          }
+        }
+      }
+
       // Check if path starts with any ignored directory
       if (
         IGNORED_DIRECTORIES.some(
           dir => path.startsWith(`${dir}/`) || path === dir
         )
       ) {
+        logger.debug(`Ignoring GitHub directory: ${path}`);
         return true;
       }
 
       // Check if file matches any ignored pattern
-      return IGNORED_FILE_PATTERNS.some(pattern => {
+      const shouldIgnoreFile = IGNORED_FILE_PATTERNS.some(pattern => {
         if (pattern.includes("*")) {
           const regex = new RegExp("^" + pattern.replace(/\*/g, ".*") + "$");
           return regex.test(path.split("/").pop() || "");
         }
         return path.endsWith(pattern);
       });
+
+      if (shouldIgnoreFile) {
+        logger.debug(`Ignoring GitHub file: ${path}`);
+      }
+      return shouldIgnoreFile;
     };
 
     // Process files in parallel with rate limiting
@@ -132,6 +154,7 @@ export async function fetchRepositoryContents(
     );
 
     logger.info(`Successfully fetched ${files.length} files`);
+    logger.debug(`Files: ${files.map(file => file.path).join(", ")}`);
     return files;
   } catch (error) {
     logger.error("Failed to fetch repository contents:", error);

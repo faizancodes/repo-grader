@@ -1,7 +1,6 @@
 export const IGNORED_DIRECTORIES = [
   "node_modules",
   ".git",
-  ".next",
   "dist",
   "build",
   "coverage",
@@ -15,6 +14,12 @@ export const IGNORED_DIRECTORIES = [
   ".venv",
   ".idea",
   ".vscode",
+] as const;
+
+export const IGNORED_PATH_PATTERNS = [
+  "components/ui",
+  "components/UI",
+  ".next",
 ] as const;
 
 export const IGNORED_FILE_PATTERNS = [

@@ -1,11 +1,9 @@
-import fs from "fs/promises";
 import path from "path";
 import { Logger } from "./logger";
 import {
   IGNORED_DIRECTORIES,
   IGNORED_FILE_PATTERNS,
-  MAX_FILE_SIZE,
-  MAX_LINES,
+  IGNORED_PATH_PATTERNS,
 } from "@/config/repo-analysis";
 
 const logger = new Logger("FileSystem");
@@ -23,6 +21,22 @@ export function shouldIgnorePath(
   isDirectory: boolean
 ): boolean {
   const basename = path.basename(filePath);
+  const normalizedPath = filePath.replace(/\\/g, "/");
+
+  // First check if the path contains any ignored patterns
+  for (const pattern of IGNORED_PATH_PATTERNS) {
+    // Check if this path or any of its parent directories match the pattern
+    const pathParts = normalizedPath.split("/");
+    for (let i = 0; i < pathParts.length; i++) {
+      const parentPath = pathParts.slice(0, i + 1).join("/");
+      if (parentPath.toLowerCase().endsWith(pattern.toLowerCase())) {
+        logger.debug(
+          `Ignoring file in ignored path pattern ${pattern}: ${filePath}`
+        );
+        return true;
+      }
+    }
+  }
 
   if (isDirectory) {
     const shouldIgnore = IGNORED_DIRECTORIES.includes(
@@ -48,104 +62,8 @@ export function shouldIgnorePath(
   return shouldIgnore;
 }
 
-/**
- * Recursively reads all valid files in a directory
- */
-export async function readFilesRecursively(
-  dir: string
-): Promise<FileContent[]> {
-  const files: FileContent[] = [];
-  logger.info(`Starting to read directory: ${dir}`);
-
-  try {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    logger.debug(`Found ${entries.length} entries in directory: ${dir}`);
-
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
-
-      if (entry.isDirectory()) {
-        if (shouldIgnorePath(fullPath, true)) continue;
-
-        logger.debug(`Processing subdirectory: ${fullPath}`);
-        const subFiles = await readFilesRecursively(fullPath);
-        files.push(...subFiles);
-        continue;
-      }
-
-      if (shouldIgnorePath(fullPath, false)) continue;
-
-      try {
-        const stats = await fs.stat(fullPath);
-        if (stats.size > MAX_FILE_SIZE) {
-          logger.warn(`Skipping large file ${fullPath} (${stats.size} bytes)`);
-          continue;
-        }
-
-        logger.debug(`Reading file: ${fullPath}`);
-        const content = await fs.readFile(fullPath, "utf-8");
-
-        // Check line count
-        const lineCount = content.split("\n").length;
-        if (lineCount > MAX_LINES) {
-          logger.warn(
-            `Skipping file with too many lines ${fullPath} (${lineCount} lines)`
-          );
-          continue;
-        }
-
-        files.push({ path: fullPath, content });
-      } catch (error) {
-        logger.error(`Error reading file ${fullPath}`, error);
-      }
-    }
-
-    logger.info(
-      `Successfully processed directory: ${dir}, found ${files.length} files`
-    );
-    return files;
-  } catch (error) {
-    logger.error(`Error reading directory ${dir}`, error);
-    return files;
-  }
-}
-
-/**
- * Creates a temporary directory for cloning repositories
- */
-export async function createTempDir(): Promise<string> {
-  const isProd = process.env.NODE_ENV !== "development";
-  const baseDir = isProd ? "/tmp" : path.join(process.cwd(), "temp");
-  const tempDir = path.join(baseDir, Date.now().toString());
-
-  logger.info(
-    `Creating temporary directory: ${tempDir} in ${isProd ? "production" : "development"} mode`
-  );
-  try {
-    await fs.mkdir(tempDir, { recursive: true });
-    logger.debug(`Successfully created temporary directory: ${tempDir}`);
-    return tempDir;
-  } catch (error) {
-    logger.error(`Failed to create temporary directory: ${tempDir}`, error);
-    throw error;
-  }
-}
-
-/**
- * Safely removes a directory and its contents
- */
-export async function removeTempDir(dir: string): Promise<void> {
-  logger.info(`Removing temporary directory: ${dir}`);
-  try {
-    await fs.rm(dir, { recursive: true, force: true });
-    logger.debug(`Successfully removed temporary directory: ${dir}`);
-  } catch (error) {
-    logger.error(`Failed to remove temporary directory: ${dir}`, error);
-  }
-}
-
 export function formatFileContent(fileContent: FileContent) {
-  logger.debug(`Formatting file content for: ${fileContent.path}`);
+  // logger.debug(`Formatting file content for: ${fileContent.path}`);
 
   // Handle both /tmp and /temp paths
   const isProd = process.env.NODE_ENV !== "development";
