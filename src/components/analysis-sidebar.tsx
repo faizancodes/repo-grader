@@ -5,6 +5,7 @@ import { Job } from "@/types/jobs";
 import { listJobs, testKVConnection } from "@/app/actions";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function AnalysisSidebar() {
@@ -115,7 +116,14 @@ export function AnalysisSidebar() {
 
   return (
     <div className="w-80 h-screen bg-gray-900/50 border-r border-gray-800 p-4 space-y-4 overflow-auto">
-      <h2 className="text-lg font-semibold text-white">Analysis History</h2>
+      <div className="flex flex-col gap-2">
+        <h2 className="text-lg font-semibold text-white">Analysis History</h2>
+        <Button variant="outline" asChild>
+          <Link href="/" className="w-full">
+            Analyze new Repo
+          </Link>
+        </Button>
+      </div>
       <div className="space-y-2">
         {jobs.length === 0 ? (
           <div className="p-4 rounded-lg bg-gray-800/30 border border-gray-700/30">

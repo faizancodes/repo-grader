@@ -6,6 +6,7 @@ import { KVStorage } from "@/utils/kv-storage";
 import type { Job } from "@/types/jobs";
 import { fetchRepositoryContents } from "@/utils/github";
 import { analyzeCode } from "@/utils/analyzeCode";
+import { getUserId } from "@/utils/session";
 
 const logger = new Logger("Server Action: AnalyzeRepo");
 
@@ -19,8 +20,10 @@ export async function analyzeRepository(url: string): Promise<{
       return { error: "Invalid GitHub repository URL" };
     }
 
+    const userId = await getUserId();
+
     // Create a new job
-    const job = await KVStorage.createJob(url);
+    const job = await KVStorage.createJob(url, userId);
 
     // Start analysis in the background
     (async () => {
@@ -65,10 +68,18 @@ export async function getAnalysisStatus(jobId: string): Promise<{
   job?: Job;
 }> {
   try {
+    const userId = await getUserId();
     const job = await KVStorage.getJob(jobId);
+
     if (!job) {
       return { error: "Analysis job not found" };
     }
+
+    // Only return the job if it belongs to the current user
+    if (job.userId !== userId) {
+      return { error: "Analysis job not found" };
+    }
+
     return { job };
   } catch (error) {
     logger.error("Error fetching analysis status:", error);
@@ -82,8 +93,12 @@ export async function listJobs(): Promise<{
 }> {
   try {
     logger.info("Starting to list jobs");
-    const jobs = await KVStorage.listJobs();
-    logger.info("Successfully listed jobs", { count: jobs.length, jobs });
+    const userId = await getUserId();
+    const jobs = await KVStorage.listJobsForUser(userId);
+    logger.info("Successfully listed jobs for user", {
+      userId,
+      count: jobs.length,
+    });
     return { jobs };
   } catch (error) {
     logger.error("Error listing jobs:", error);

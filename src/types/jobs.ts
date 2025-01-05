@@ -4,6 +4,7 @@ export type JobStatus = "pending" | "processing" | "completed" | "failed";
 
 export interface Job {
   id: string;
+  userId: string;
   status: JobStatus;
   url: string;
   createdAt: string;

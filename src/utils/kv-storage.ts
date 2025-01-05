@@ -4,6 +4,7 @@ import { redis } from "./redis";
 
 const logger = new Logger("KVStorage");
 const KV_PREFIX = "analysis-job:";
+const USER_INDEX_PREFIX = "user-jobs:";
 
 export class KVStorage {
   static isValidJob(job: unknown): job is Job {
@@ -13,6 +14,8 @@ export class KVStorage {
     return Boolean(
       j.id &&
         typeof j.id === "string" &&
+        j.userId &&
+        typeof j.userId === "string" &&
         j.url &&
         typeof j.url === "string" &&
         j.status &&
@@ -24,11 +27,12 @@ export class KVStorage {
     );
   }
 
-  static async createJob(url: string): Promise<Job> {
-    logger.info("Creating new analysis job", { url });
+  static async createJob(url: string, userId: string): Promise<Job> {
+    logger.info("Creating new analysis job", { url, userId });
 
     const job: Job = {
       id: crypto.randomUUID(),
+      userId,
       status: "pending",
       url,
       createdAt: new Date().toISOString(),
@@ -43,17 +47,22 @@ export class KVStorage {
 
     logger.debug("Generated new job details", {
       jobId: job.id,
+      userId: job.userId,
       status: job.status,
       createdAt: job.createdAt,
     });
 
-    const key = `${KV_PREFIX}${job.id}`;
+    const jobKey = `${KV_PREFIX}${job.id}`;
+    const userKey = `${USER_INDEX_PREFIX}${userId}`;
+
     try {
-      // Store job directly, no extra wrapping
-      await redis.set(key, job);
+      // Store job
+      await redis.set(jobKey, job);
+      // Add job ID to user's job list
+      await redis.sadd(userKey, job.id);
 
       // Verify the job was stored correctly
-      const storedJob = await redis.get<unknown>(key);
+      const storedJob = await redis.get<unknown>(jobKey);
       const parsedJob = this.parseJobData(storedJob);
 
       if (!parsedJob) {
@@ -66,6 +75,7 @@ export class KVStorage {
 
       logger.info("Successfully created and verified job", {
         jobId: job.id,
+        userId: job.userId,
         url: job.url,
         status: job.status,
       });
@@ -99,6 +109,7 @@ export class KVStorage {
 
       logger.debug("Retrieved job details", {
         jobId,
+        userId: job.userId,
         status: job.status,
         updatedAt: job.updatedAt,
       });
@@ -295,6 +306,67 @@ export class KVStorage {
       return validJobs;
     } catch (error) {
       logger.error("Failed to list jobs", {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      return [];
+    }
+  }
+
+  static async listJobsForUser(userId: string): Promise<Job[]> {
+    // First test the connection
+    const isConnected = await this.testConnection();
+    if (!isConnected) {
+      logger.error("Cannot list jobs - Redis connection failed");
+      return [];
+    }
+
+    logger.info("Listing analysis jobs for user", { userId });
+
+    try {
+      const userKey = `${USER_INDEX_PREFIX}${userId}`;
+      // Get all job IDs for this user
+      const jobIds = await redis.smembers(userKey);
+
+      if (jobIds.length === 0) {
+        logger.info("No jobs found for user", { userId });
+        return [];
+      }
+
+      logger.info(`Found ${jobIds.length} jobs for user, fetching details`, {
+        userId,
+        jobIds,
+      });
+
+      // Construct keys for all jobs
+      const jobKeys = jobIds.map(id => `${KV_PREFIX}${id}`);
+
+      // Fetch all jobs in parallel
+      const rawJobs = await redis.mget<unknown[]>(...jobKeys);
+      logger.info("Raw jobs data:", { rawJobs });
+
+      const validJobs = rawJobs
+        .map(data => this.parseJobData(data))
+        .filter((job): job is Job => job !== null && job.userId === userId)
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+      logger.info(
+        `Successfully retrieved ${validJobs.length} valid jobs for user`,
+        {
+          userId,
+          validJobs,
+          firstJob: validJobs[0],
+          lastJob: validJobs[validJobs.length - 1],
+        }
+      );
+
+      return validJobs;
+    } catch (error) {
+      logger.error("Failed to list jobs for user", {
+        userId,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
       });

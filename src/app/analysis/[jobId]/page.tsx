@@ -2,6 +2,8 @@ import { KVStorage } from "@/utils/kv-storage";
 import { AnalysisResults } from "@/components/analysis-results";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { ShareButton } from "@/components/share-button";
+import { Button } from "@/components/ui/button";
 
 export const maxDuration = 60;
 
@@ -11,8 +13,8 @@ interface PageProps {
 }
 
 export default async function AnalysisPage({ params }: PageProps) {
-  const pageParams = await params;
-  const job = await KVStorage.getJob(pageParams.jobId);
+  const resolvedParams = await params;
+  const job = await KVStorage.getJob(resolvedParams.jobId);
 
   if (!job || job.status !== "completed" || !job.result) {
     notFound();
@@ -42,13 +44,14 @@ export default async function AnalysisPage({ params }: PageProps) {
                 {job.url}
               </a>
             </p>
-            <div className="pt-4">
-              <Link
-                href="/"
-                className="inline-flex h-11 items-center justify-center px-8 bg-gradient-to-r from-blue-500 via-cyan-500 to-emerald-500 hover:from-blue-600 hover:via-cyan-600 hover:to-emerald-600 text-black font-medium rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+            <div className="pt-4 flex items-center justify-center gap-4">
+              <Button
+                asChild
+                className="gap-2 bg-gradient-to-r from-blue-500 via-cyan-500 to-emerald-500 hover:from-blue-600 hover:via-cyan-600 hover:to-emerald-600 text-black border-0"
               >
-                Analyze Another Repository
-              </Link>
+                <Link href="/">Analyze Another Repository</Link>
+              </Button>
+              <ShareButton jobId={resolvedParams.jobId} />
             </div>
           </div>
 
