@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { Logger } from "@/utils/logger";
+
+const logger = new Logger("Config:Env");
 
 // Schema for environment variables
 const envSchema = z.object({
@@ -16,7 +19,8 @@ const envSchema = z.object({
 // Function to validate environment variables
 const validateEnv = () => {
   try {
-    const parsed = envSchema.parse({
+    logger.info("Validating environment variables");
+    const env = {
       GROQ_API_KEY: process.env.GROQ_API_KEY,
       GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
@@ -26,11 +30,19 @@ const validateEnv = () => {
       KV_REST_API_TOKEN: process.env.KV_REST_API_TOKEN,
       KV_REST_API_READ_ONLY_TOKEN: process.env.KV_REST_API_READ_ONLY_TOKEN,
       API_URL: process.env.API_URL,
+    };
+    logger.debug("Environment variables", {
+      hasKvUrl: !!env.KV_REST_API_URL,
+      hasKvToken: !!env.KV_REST_API_TOKEN,
+      kvUrl: env.KV_REST_API_URL,
     });
+    const parsed = envSchema.parse(env);
+    logger.info("Environment variables validated successfully");
     return parsed;
   } catch (error) {
     if (error instanceof z.ZodError) {
       const missingVars = error.errors.map(err => err.path.join("."));
+      logger.error("Invalid environment variables", { missingVars });
       throw new Error(
         `❌ Invalid environment variables: ${missingVars.join(
           ", "
@@ -41,5 +53,4 @@ const validateEnv = () => {
   }
 };
 
-// Export validated environment variables
 export const env = validateEnv();

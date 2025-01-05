@@ -75,3 +75,35 @@ export async function getAnalysisStatus(jobId: string): Promise<{
     return { error: "Failed to fetch analysis status" };
   }
 }
+
+export async function listJobs(): Promise<{
+  error?: string;
+  jobs?: Job[];
+}> {
+  try {
+    logger.info("Starting to list jobs");
+    const jobs = await KVStorage.listJobs();
+    logger.info("Successfully listed jobs", { count: jobs.length, jobs });
+    return { jobs };
+  } catch (error) {
+    logger.error("Error listing jobs:", error);
+    return { error: "Failed to fetch analysis history" };
+  }
+}
+
+export async function testKVConnection(): Promise<{
+  error?: string;
+  success?: boolean;
+}> {
+  try {
+    logger.info("Testing KV storage connection");
+    const isConnected = await KVStorage.testConnection();
+    if (!isConnected) {
+      return { error: "Failed to connect to KV storage" };
+    }
+    return { success: true };
+  } catch (error) {
+    logger.error("Error testing KV connection:", error);
+    return { error: "Failed to test KV connection" };
+  }
+}
