@@ -33,6 +33,9 @@ IMPORTANT: You must respond with a valid JSON object following this exact schema
     }
   ]
 }
+
+
+ONLY GENERATE 4 ISSUES MAX. DO NOT GENERATE MORE THAN 4 ISSUES.
 `;
 
 const PYTHON_BASE_PROMPT = `
@@ -63,6 +66,8 @@ IMPORTANT: You must respond with a valid JSON object following this exact schema
     }
   ]
 }
+
+ONLY GENERATE 4 ISSUES MAX. DO NOT GENERATE MORE THAN 4 ISSUES.
 `;
 
 // Category-specific content
