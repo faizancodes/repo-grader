@@ -27,20 +27,33 @@ export async function generateMetadata({
     };
   }
 
-  const repoName = new URL(job.url).pathname.split("/").pop();
+  // Extract org and repo name from GitHub URL, handling tree/branch paths
+  const pathParts = new URL(job.url).pathname.split("/").filter(Boolean);
+  const orgName = pathParts[0];
+  const repoName = pathParts[1];
+
+  // If either part is missing, use a fallback
+  if (!orgName || !repoName) {
+    return {
+      title: "Repository Analysis",
+      description: `Code quality analysis and improvement suggestions for ${job.url}`,
+    };
+  }
+
+  const fullRepoName = `${orgName}/${repoName}`;
 
   return {
-    title: `Code Analysis for ${repoName}`,
+    title: `Code Analysis for ${fullRepoName}`,
     description: `Code quality analysis and improvement suggestions for ${job.url}`,
     openGraph: {
-      title: `Code Analysis for ${repoName}`,
+      title: `Code Analysis for ${fullRepoName}`,
       description: `Code quality analysis and improvement suggestions for ${job.url}`,
       url: `/analysis/${resolvedParams.jobId}`,
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
-      title: `Code Analysis for ${repoName}`,
+      title: `Code Analysis for ${fullRepoName}`,
       description: `Code quality analysis and improvement suggestions for ${job.url}`,
     },
   };
