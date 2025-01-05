@@ -4,12 +4,46 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ShareButton } from "@/components/share-button";
 import { Button } from "@/components/ui/button";
+import { Metadata } from "next";
 
 export const maxDuration = 60;
 
 interface PageProps {
   params: Promise<{ jobId: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const resolvedParams = await params;
+  const job = await KVStorage.getJob(resolvedParams.jobId);
+
+  if (!job || job.status !== "completed" || !job.result) {
+    return {
+      title: "Analysis Not Found",
+      description:
+        "The analysis results you're looking for don't exist or haven't completed yet.",
+    };
+  }
+
+  const repoName = new URL(job.url).pathname.split("/").pop();
+
+  return {
+    title: `Code Analysis for ${repoName}`,
+    description: `Code quality analysis and improvement suggestions for ${job.url}`,
+    openGraph: {
+      title: `Code Analysis for ${repoName}`,
+      description: `Code quality analysis and improvement suggestions for ${job.url}`,
+      url: `/analysis/${resolvedParams.jobId}`,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `Code Analysis for ${repoName}`,
+      description: `Code quality analysis and improvement suggestions for ${job.url}`,
+    },
+  };
 }
 
 export default async function AnalysisPage({ params }: PageProps) {
