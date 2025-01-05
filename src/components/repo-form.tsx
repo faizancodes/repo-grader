@@ -8,6 +8,7 @@ import { GitHubLogoIcon, UpdateIcon } from "@radix-ui/react-icons";
 import { AnalysisResults } from "./analysis-results";
 import type { CodeAnalysisResponse } from "@/utils/analyzeCode";
 import { analyzeRepository, getAnalysisStatus } from "@/app/actions";
+import { useJobsStore } from "@/stores/jobs";
 
 function LoadingSkeleton() {
   return (
@@ -74,6 +75,7 @@ export function RepoForm() {
   const { toast } = useToast();
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { addJob, updateJob } = useJobsStore();
 
   // Cleanup polling on component unmount
   useEffect(() => {
@@ -124,6 +126,13 @@ export function RepoForm() {
 
       if (result.jobId) {
         setJobId(result.jobId);
+
+        // Get initial job status to add to store
+        const initialStatus = await getAnalysisStatus(result.jobId);
+        if (initialStatus.job) {
+          addJob(initialStatus.job);
+        }
+
         // Set a timeout to stop polling after MAX_POLL_TIME
         pollTimeoutRef.current = setTimeout(() => {
           stopPolling();
@@ -150,6 +159,11 @@ export function RepoForm() {
               stopPolling();
               setIsLoading(false);
               setAnalysis(status.job.result);
+              // Update the jobs store with the completed job
+              updateJob(result.jobId!, {
+                status: "completed",
+                result: status.job.result,
+              });
 
               toast({
                 title: "Analysis Complete",
@@ -163,7 +177,15 @@ export function RepoForm() {
             } else if (status.job?.status === "failed") {
               stopPolling();
               setIsLoading(false);
+              // Update the jobs store with the failed job
+              updateJob(result.jobId!, {
+                status: "failed",
+                error: status.job.error,
+              });
               throw new Error(status.job.error || "Analysis failed");
+            } else if (status.job) {
+              // Update the job in the store with its current status
+              updateJob(result.jobId!, status.job);
             }
           } catch (error) {
             stopPolling();

@@ -1,18 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Job } from "@/types/jobs";
 import { listJobs, testKVConnection } from "@/app/actions";
 import Link from "next/link";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useJobsStore } from "@/stores/jobs";
 
 export function AnalysisSidebar() {
-  const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { jobs, setJobs } = useJobsStore();
 
   useEffect(() => {
     async function fetchJobs() {
@@ -82,7 +82,7 @@ export function AnalysisSidebar() {
     }
 
     fetchJobs();
-  }, [toast]);
+  }, [toast, setJobs]);
 
   if (isLoading) {
     return (

@@ -47,6 +47,8 @@ export const IGNORED_FILE_PATTERNS = [
   "*.db",
   "tsconfig.json",
   "*.jpg",
+  "*.JPEG",
+  "*.JPG",
   "*.jpeg",
   "*.png",
   "*.gif",
