@@ -4,11 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { GitHubLogoIcon, UpdateIcon } from "@radix-ui/react-icons";
-import { AnalysisResults } from "./analysis-results";
-import type { CodeAnalysisResponse } from "@/utils/analyzeCode";
-import { analyzeRepository, getAnalysisStatus } from "@/app/actions";
+import { GitHubLogoIcon } from "@radix-ui/react-icons";
+import {
+  generateQuestions,
+  getQuestionsStatus,
+} from "../app/questions/actions";
 import { useJobsStore } from "@/stores/jobs";
+import type { QuestionsResult } from "@/utils/generateQuestions";
 
 function LoadingSkeleton() {
   return (
@@ -67,15 +69,16 @@ function LoadingSkeleton() {
 const POLL_INTERVAL = 2000; // 2 seconds
 const MAX_POLL_TIME = 5 * 60 * 1000; // 5 minutes
 
-export function RepoForm() {
+export function QuestionsForm() {
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [analysis, setAnalysis] = useState<CodeAnalysisResponse | null>(null);
+  const [questions, setQuestions] = useState<QuestionsResult | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const { toast } = useToast();
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { addJob, updateJob } = useJobsStore();
+  const [shareButtonText, setShareButtonText] = useState("Share Results");
 
   // Cleanup polling on component unmount
   useEffect(() => {
@@ -102,7 +105,7 @@ export function RepoForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAnalysis(null);
+    setQuestions(null);
     setJobId(null);
 
     if (!url.trim()) {
@@ -118,7 +121,7 @@ export function RepoForm() {
       setIsLoading(true);
       stopPolling();
 
-      const result = await analyzeRepository(url);
+      const result = await generateQuestions(url);
 
       if (result.error) {
         throw new Error(result.error);
@@ -128,7 +131,7 @@ export function RepoForm() {
         setJobId(result.jobId);
 
         // Get initial job status to add to store
-        const initialStatus = await getAnalysisStatus(result.jobId);
+        const initialStatus = await getQuestionsStatus(result.jobId);
         if (initialStatus.job) {
           addJob(initialStatus.job);
         }
@@ -139,7 +142,7 @@ export function RepoForm() {
           setIsLoading(false);
           toast({
             title: "Error",
-            description: "Analysis timed out. Please try again.",
+            description: "Question generation timed out. Please try again.",
             variant: "destructive",
           });
         }, MAX_POLL_TIME);
@@ -147,7 +150,7 @@ export function RepoForm() {
         // Start polling for job status
         pollIntervalRef.current = setInterval(async () => {
           try {
-            const status = await getAnalysisStatus(result.jobId!);
+            const status = await getQuestionsStatus(result.jobId!);
 
             if (status.error) {
               stopPolling();
@@ -158,36 +161,19 @@ export function RepoForm() {
             if (status.job?.status === "completed" && status.job.result) {
               stopPolling();
               setIsLoading(false);
-              // Type guard to ensure we're dealing with CodeAnalysisResponse
-              const isAnalysisResult = "issues" in status.job.result;
-              if (isAnalysisResult) {
-                const analysisResult = status.job
-                  .result as CodeAnalysisResponse;
-                setAnalysis(analysisResult);
+              setQuestions(status.job.result as QuestionsResult);
+              // Update the jobs store with the completed job
+              updateJob(result.jobId!, {
+                status: "completed",
+                result: status.job.result,
+              });
 
-                // Update the jobs store with the completed job
-                updateJob(result.jobId!, {
-                  status: "completed",
-                  result: status.job.result,
-                });
-
-                toast({
-                  title: "Analysis Complete",
-                  description:
-                    analysisResult.issues?.length > 0
-                      ? `Found ${analysisResult.issues.length} issues to review`
-                      : "No issues found in the repository",
-                  variant:
-                    analysisResult.issues?.length > 0 ? "info" : "success",
-                });
-              } else {
-                // This is a QuestionsResult, not a CodeAnalysisResponse
-                // We don't need to set analysis state for this
-                updateJob(result.jobId!, {
-                  status: "completed",
-                  result: status.job.result,
-                });
-              }
+              toast({
+                title: "Questions Generated",
+                description:
+                  "Successfully generated questions for your repository",
+                variant: "success",
+              });
             } else if (status.job?.status === "failed") {
               stopPolling();
               setIsLoading(false);
@@ -196,7 +182,7 @@ export function RepoForm() {
                 status: "failed",
                 error: status.job.error,
               });
-              throw new Error(status.job.error || "Analysis failed");
+              throw new Error(status.job.error || "Question generation failed");
             } else if (status.job) {
               // Update the job in the store with its current status
               updateJob(result.jobId!, status.job);
@@ -209,7 +195,7 @@ export function RepoForm() {
               description:
                 error instanceof Error
                   ? error.message
-                  : "Failed to check analysis status",
+                  : "Failed to check question generation status",
               variant: "destructive",
             });
           }
@@ -223,7 +209,7 @@ export function RepoForm() {
         description:
           error instanceof Error
             ? error.message
-            : "Failed to analyze repository",
+            : "Failed to generate questions",
         variant: "destructive",
       });
     }
@@ -232,11 +218,21 @@ export function RepoForm() {
   const handleShare = () => {
     if (!jobId) return;
 
-    const shareUrl = `${window.location.origin}/analysis/${jobId}`;
+    const shareUrl = `${window.location.origin}/questions/${jobId}`;
     navigator.clipboard.writeText(shareUrl);
+
+    // Change button text
+    setShareButtonText("Link Copied!");
+
+    // Reset button text after 2 seconds
+    setTimeout(() => {
+      setShareButtonText("Share Results");
+    }, 2000);
+
     toast({
       title: "Link Copied!",
-      description: "Share this link with others to view the analysis results",
+      description:
+        "Share this link with others to view the generated questions",
     });
   };
 
@@ -263,14 +259,7 @@ export function RepoForm() {
               disabled={isLoading}
               className="w-full h-11 bg-gradient-to-r from-blue-500 via-cyan-500 to-emerald-500 hover:from-blue-600 hover:via-cyan-600 hover:to-emerald-600 text-white font-medium rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
-              {isLoading ? (
-                <>
-                  <UpdateIcon className="mr-2 h-5 w-5 animate-spin" />
-                  Analyzing Repository...
-                </>
-              ) : (
-                "Analyze Repository"
-              )}
+              {isLoading ? "Generating Questions..." : "Generate Questions"}
             </Button>
           </div>
         </form>
@@ -278,35 +267,50 @@ export function RepoForm() {
 
       {isLoading && <LoadingSkeleton />}
 
-      {analysis && jobId && (
-        <div className="space-y-4">
-          <div className="flex justify-end">
-            <button
-              onClick={handleShare}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+      {questions && (
+        <div className="backdrop-blur-xl bg-gradient-to-b from-white/[0.07] to-transparent rounded-2xl border border-white/[0.1] shadow-[0_0_1px_1px_rgba(0,0,0,0.3)]">
+          <div className="p-8 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 text-transparent bg-clip-text">
+                Generated Questions
+              </h2>
+              <Button
+                onClick={handleShare}
+                variant="outline"
+                className="border-white/10 bg-black/30 text-white hover:bg-black/50 hover:text-white"
               >
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                <polyline points="16 6 12 2 8 6" />
-                <line x1="12" y1="2" x2="12" y2="15" />
-              </svg>
-              Share Results
-            </button>
+                {shareButtonText}
+              </Button>
+            </div>
+
+            <div className="p-4 bg-black/20 border border-white/10 rounded-xl space-y-2">
+              <div className="flex items-center gap-2">
+                <GitHubLogoIcon className="w-5 h-5 text-gray-400" />
+                <a
+                  href={questions.repositoryUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 hover:underline transition-colors"
+                >
+                  {questions.repositoryUrl}
+                </a>
+              </div>
+              <p className="text-gray-400 text-sm">
+                Generated on {new Date(questions.generatedAt).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {questions.questions?.map((question: string, index: number) => (
+                <div
+                  key={index}
+                  className="p-4 bg-black/30 border border-white/10 rounded-xl"
+                >
+                  <p className="text-white">{question}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <AnalysisResults
-            issues={analysis.issues}
-            overallFeedback={analysis.overallFeedback}
-          />
         </div>
       )}
     </div>

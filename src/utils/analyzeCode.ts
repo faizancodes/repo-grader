@@ -26,6 +26,12 @@ export interface CodeAnalysisResponse {
   issues: CodeAnalysisIssue[];
 }
 
+export interface CodeAnalysisQuestion {
+  questions: {
+    question: string;
+  }[];
+}
+
 interface CategoryGroup {
   name: CategoryGroupName;
   categories: string[];

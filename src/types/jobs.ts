@@ -1,4 +1,5 @@
 import type { CodeAnalysisResponse } from "@/utils/analyzeCode";
+import type { QuestionsResult } from "@/utils/generateQuestions";
 
 export type JobStatus = "pending" | "processing" | "completed" | "failed";
 
@@ -9,7 +10,7 @@ export interface Job {
   url: string;
   createdAt: string;
   updatedAt: string;
-  result?: CodeAnalysisResponse;
+  result?: CodeAnalysisResponse | QuestionsResult;
   error?: string;
 }
 

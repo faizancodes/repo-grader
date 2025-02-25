@@ -1,10 +1,12 @@
 import { KVStorage } from "@/utils/kv-storage";
 import { AnalysisResults } from "@/components/analysis-results";
+import { QuestionsResults } from "@/components/questions-results";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ShareButton } from "@/components/share-button";
 import { Button } from "@/components/ui/button";
 import { Metadata } from "next";
+import type { QuestionsResult } from "@/utils/generateQuestions";
 
 export const maxDuration = 60;
 
@@ -21,9 +23,9 @@ export async function generateMetadata({
 
   if (!job || job.status !== "completed" || !job.result) {
     return {
-      title: "Analysis Not Found",
+      title: "Results Not Found",
       description:
-        "The analysis results you're looking for don't exist or haven't completed yet.",
+        "The results you're looking for don't exist or haven't completed yet.",
     };
   }
 
@@ -35,13 +37,33 @@ export async function generateMetadata({
   // If either part is missing, use a fallback
   if (!orgName || !repoName) {
     return {
-      title: "Repository Analysis",
-      description: `Code quality analysis and improvement suggestions for ${job.url}`,
+      title: "Repository Results",
+      description: `Results for ${job.url}`,
     };
   }
 
   const fullRepoName = `${orgName}/${repoName}`;
 
+  // Check if this is a questions result
+  if ("questions" in job.result && "repositoryUrl" in job.result) {
+    return {
+      title: `Questions for ${fullRepoName}`,
+      description: `Generated questions for ${job.url}`,
+      openGraph: {
+        title: `Questions for ${fullRepoName}`,
+        description: `Generated questions for ${job.url}`,
+        url: `/analysis/${resolvedParams.jobId}`,
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: `Questions for ${fullRepoName}`,
+        description: `Generated questions for ${job.url}`,
+      },
+    };
+  }
+
+  // Default to analysis metadata
   return {
     title: `Code Analysis for ${fullRepoName}`,
     description: `Code quality analysis and improvement suggestions for ${job.url}`,
@@ -67,6 +89,25 @@ export default async function AnalysisPage({ params }: PageProps) {
     notFound();
   }
 
+  // Determine the type of result
+  const isQuestionsResult =
+    "questions" in job.result && "repositoryUrl" in job.result;
+  const isAnalysisResult =
+    "issues" in job.result && "overallFeedback" in job.result;
+
+  // If neither type matches, return 404
+  if (!isQuestionsResult && !isAnalysisResult) {
+    notFound();
+  }
+
+  // Type assertions for TypeScript
+  const questionsResult = isQuestionsResult
+    ? (job.result as QuestionsResult)
+    : null;
+  const analysisResult = isAnalysisResult
+    ? (job.result as { issues: any[]; overallFeedback: string })
+    : null;
+
   return (
     <div className="flex-1 min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black text-white overflow-auto relative">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(17,24,39,0.8),rgba(0,0,0,1))] opacity-70" />
@@ -78,7 +119,7 @@ export default async function AnalysisPage({ params }: PageProps) {
         <main className="w-full max-w-4xl mx-auto space-y-8">
           <div className="space-y-4 text-center">
             <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-emerald-400 text-transparent bg-clip-text sm:text-6xl pb-2 tracking-tight">
-              Repo Analysis
+              {isQuestionsResult ? "Repository Questions" : "Repo Analysis"}
             </h1>
             <p className="text-lg text-gray-400 max-w-[650px] mx-auto flex flex-col items-center gap-2">
               Repository:{" "}
@@ -96,16 +137,30 @@ export default async function AnalysisPage({ params }: PageProps) {
                 asChild
                 className="gap-2 bg-gradient-to-r from-blue-500 via-cyan-500 to-emerald-500 hover:from-blue-600 hover:via-cyan-600 hover:to-emerald-600 text-black border-0"
               >
-                <Link href="/">Analyze Another Repository</Link>
+                <Link href={isQuestionsResult ? "/questions" : "/"}>
+                  {isQuestionsResult
+                    ? "Generate More Questions"
+                    : "Analyze Another Repository"}
+                </Link>
               </Button>
               <ShareButton jobId={resolvedParams.jobId} />
             </div>
           </div>
 
-          <AnalysisResults
-            issues={job.result.issues}
-            overallFeedback={job.result.overallFeedback}
-          />
+          {analysisResult && (
+            <AnalysisResults
+              issues={analysisResult.issues}
+              overallFeedback={analysisResult.overallFeedback}
+            />
+          )}
+
+          {questionsResult && (
+            <QuestionsResults
+              questions={questionsResult.questions}
+              repositoryUrl={questionsResult.repositoryUrl}
+              generatedAt={questionsResult.generatedAt}
+            />
+          )}
         </main>
       </div>
     </div>

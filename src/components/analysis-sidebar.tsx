@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useJobsStore } from "@/stores/jobs";
-import { ChevronLeft, ChevronRight, Home } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home, HelpCircle } from "lucide-react";
 
 export function AnalysisSidebar() {
   const [isLoading, setIsLoading] = useState(true);
@@ -177,17 +177,31 @@ export function AnalysisSidebar() {
 
           {/* Action buttons */}
           {isOpen ? (
-            <Button variant="outline" asChild>
-              <Link href="/" className="w-full">
-                Analyze new Repo
-              </Link>
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button variant="outline" asChild>
+                <Link href="/" className="w-full">
+                  Analyze new Repo
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/questions" className="w-full">
+                  Generate Questions
+                </Link>
+              </Button>
+            </div>
           ) : (
-            <Button variant="outline" size="icon" asChild className="w-8 h-8">
-              <Link href="/">
-                <Home className="h-4 w-4" />
-              </Link>
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button variant="outline" size="icon" asChild className="w-8 h-8">
+                <Link href="/">
+                  <Home className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="icon" asChild className="w-8 h-8">
+                <Link href="/questions">
+                  <HelpCircle className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
           )}
         </div>
 
@@ -235,6 +249,35 @@ export function AnalysisSidebar() {
           ) : (
             <div className="p-4 rounded-lg bg-red-900/20 border border-red-800/30">
               <p className="text-sm text-red-300">{error}</p>
+            </div>
+          )}
+
+          {/* Add action buttons in loading/error state too */}
+          {isOpen ? (
+            <div className="flex flex-col gap-2 mt-4">
+              <Button variant="outline" asChild>
+                <Link href="/" className="w-full">
+                  Analyze new Repo
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/questions" className="w-full">
+                  Generate Questions
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 mt-4">
+              <Button variant="outline" size="icon" asChild className="w-8 h-8">
+                <Link href="/">
+                  <Home className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="icon" asChild className="w-8 h-8">
+                <Link href="/questions">
+                  <HelpCircle className="h-4 w-4" />
+                </Link>
+              </Button>
             </div>
           )}
         </div>

@@ -1,7 +1,7 @@
 import { env } from "@/config/env";
 import OpenAI from "openai";
 import { Logger } from "@/utils/logger";
-import { CodeAnalysisResponse } from "./analyzeCode";
+import { CodeAnalysisResponse, CodeAnalysisQuestion } from "./analyzeCode";
 
 const logger = new Logger("geminiClient");
 
@@ -79,6 +79,53 @@ async function tryWithRetries(
   throw lastError;
 }
 
+async function tryWithRetriesForQuestions(
+  modelName: string,
+  messages: Message[],
+  maxRetries: number = MAX_RETRIES
+): Promise<CodeAnalysisQuestion> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      logger.info(
+        `Attempting to generate content with model ${modelName} (attempt ${attempt + 1}/${maxRetries})`
+      );
+
+      logger.debug(
+        "GEMINI Messages:",
+        messages.map(m => ({ role: m.role, length: m.content.length }))
+      );
+      // logger.debug("GEMINI Messages:", messages);
+
+      const response = await openai.chat.completions.create({
+        model: modelName,
+        messages: messages,
+        response_format: { type: "json_object" },
+      });
+
+      logger.info(`Successfully generated content with model ${modelName}`);
+      return JSON.parse(response.choices[0].message.content || "");
+    } catch (error) {
+      lastError = error as Error;
+      if (attempt < maxRetries - 1) {
+        const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt);
+        logger.warn(
+          `Attempt ${attempt + 1}/${maxRetries} failed for model ${modelName}. Retrying in ${delay}ms`,
+          { error: lastError }
+        );
+        await sleep(delay);
+        continue;
+      }
+      logger.error(
+        `Final attempt ${maxRetries}/${maxRetries} failed for model ${modelName}`,
+        { error: lastError }
+      );
+    }
+  }
+  throw lastError;
+}
+
 export async function getGeminiResponse(
   messages: Message[]
 ): Promise<CodeAnalysisResponse> {
@@ -91,6 +138,34 @@ export async function getGeminiResponse(
       const response = await tryWithRetries(modelName, messages);
       logger.info(`Successfully generated response using model ${modelName}`);
       return response as CodeAnalysisResponse;
+    } catch (error) {
+      lastError = error as Error;
+      logger.warn(
+        `All retries failed for model ${modelName}, attempting next model`,
+        { error: lastError }
+      );
+      continue;
+    }
+  }
+
+  logger.error("All models and retries exhausted", { error: lastError });
+  throw new Error(
+    `All models and retries failed. Last error: ${lastError?.message}`
+  );
+}
+
+export async function getGeminiResponseForQuestions(
+  messages: Message[]
+): Promise<CodeAnalysisQuestion> {
+  let lastError: Error | null = null;
+
+  logger.info("Starting AI response generation with fallback models");
+
+  for (const modelName of GEMINI_MODELS) {
+    try {
+      const response = await tryWithRetriesForQuestions(modelName, messages);
+      logger.info(`Successfully generated response using model ${modelName}`);
+      return response as CodeAnalysisQuestion;
     } catch (error) {
       lastError = error as Error;
       logger.warn(
