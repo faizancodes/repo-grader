@@ -46,12 +46,6 @@ export async function generateQuestionsForRepo(
       codeFileCount: codeFiles.length,
     });
 
-    // Prepare the repository structure for analysis
-    const repoStructure = codeFiles.map(file => ({
-      path: file.path,
-      content: file.content,
-    }));
-
     const prompt = `You are a Principal Software Engineer. You are given a codebase and you need to generate 5 specific questions that are relevant to the codebase. The questions should be designed to test the developer's understanding of the codebase and to help them improve their skills.
 
     The questions should be in the following JSON format:

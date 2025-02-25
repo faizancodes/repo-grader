@@ -1,6 +1,4 @@
 import { GitHubLogoIcon } from "@radix-ui/react-icons";
-import type { QuestionsResult } from "@/utils/generateQuestions";
-
 interface QuestionsResultsProps {
   questions: string[];
   repositoryUrl: string;

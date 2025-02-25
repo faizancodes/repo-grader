@@ -7,6 +7,7 @@ import { ShareButton } from "@/components/share-button";
 import { Button } from "@/components/ui/button";
 import { Metadata } from "next";
 import type { QuestionsResult } from "@/utils/generateQuestions";
+import type { CodeAnalysisIssue } from "@/utils/analyzeCode";
 
 export const maxDuration = 60;
 
@@ -105,7 +106,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     ? (job.result as QuestionsResult)
     : null;
   const analysisResult = isAnalysisResult
-    ? (job.result as { issues: any[]; overallFeedback: string })
+    ? (job.result as { issues: CodeAnalysisIssue[]; overallFeedback: string })
     : null;
 
   return (
