@@ -7,7 +7,14 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useJobsStore } from "@/stores/jobs";
-import { ChevronLeft, ChevronRight, Home, HelpCircle } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Home,
+  HelpCircle,
+  Code,
+  FileQuestion,
+} from "lucide-react";
 
 export function AnalysisSidebar() {
   const [isLoading, setIsLoading] = useState(true);
@@ -89,6 +96,19 @@ export function AnalysisSidebar() {
   const formatGithubUrl = (url: string) =>
     url.replace("https://github.com/", "");
 
+  // Function to determine job type based on result structure
+  const getJobType = (job: any) => {
+    if (!job.result) return null;
+
+    if (job.result.questions && Array.isArray(job.result.questions)) {
+      return "questions";
+    } else if (job.result.overallFeedback && job.result.issues) {
+      return "analysis";
+    }
+
+    return null;
+  };
+
   const sidebarContent = (
     <div className="space-y-2">
       {jobs.length === 0 ? (
@@ -112,22 +132,39 @@ export function AnalysisSidebar() {
             <div className="truncate text-sm text-white">
               {formatGithubUrl(job.url)}
             </div>
-            <div className="flex items-center gap-2 mt-1">
-              <div
-                className={cn(
-                  "text-xs px-2 py-0.5 rounded-full",
-                  job.status === "completed"
-                    ? "bg-emerald-500/20 text-emerald-300"
-                    : job.status === "failed"
-                      ? "bg-red-500/20 text-red-300"
-                      : job.status === "processing"
-                        ? "bg-blue-500/20 text-blue-300"
-                        : "bg-gray-500/20 text-gray-300"
+            <div className="flex items-center justify-between gap-2 mt-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <div
+                  className={cn(
+                    "text-xs px-2 py-0.5 rounded-full",
+                    job.status === "completed"
+                      ? "bg-emerald-500/20 text-emerald-300"
+                      : job.status === "failed"
+                        ? "bg-red-500/20 text-red-300"
+                        : job.status === "processing"
+                          ? "bg-blue-500/20 text-blue-300"
+                          : "bg-gray-500/20 text-gray-300"
+                  )}
+                >
+                  {job.status}
+                </div>
+                {job.status === "completed" && (
+                  <div className="flex items-center gap-1">
+                    {getJobType(job) === "questions" ? (
+                      <div className="flex items-center text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300">
+                        <FileQuestion className="h-3 w-3 mr-1" />
+                        <span>Questions</span>
+                      </div>
+                    ) : getJobType(job) === "analysis" ? (
+                      <div className="flex items-center text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300">
+                        <Code className="h-3 w-3 mr-1" />
+                        <span>Analysis</span>
+                      </div>
+                    ) : null}
+                  </div>
                 )}
-              >
-                {job.status}
               </div>
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-gray-400 shrink-0">
                 {new Date(job.createdAt).toLocaleDateString()}
               </div>
             </div>
