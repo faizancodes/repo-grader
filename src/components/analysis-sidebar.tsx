@@ -7,6 +7,9 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useJobsStore } from "@/stores/jobs";
+import { Job } from "@/types/jobs";
+import { CodeAnalysisResponse } from "@/utils/analyzeCode";
+import { QuestionsResult } from "@/utils/generateQuestions";
 import {
   ChevronLeft,
   ChevronRight,
@@ -97,12 +100,29 @@ export function AnalysisSidebar() {
     url.replace("https://github.com/", "");
 
   // Function to determine job type based on result structure
-  const getJobType = (job: any) => {
+  const getJobType = (job: Job): "questions" | "analysis" | null => {
     if (!job.result) return null;
 
-    if (job.result.questions && Array.isArray(job.result.questions)) {
+    // Type guard for QuestionsResult
+    const isQuestionsResult = (
+      result: CodeAnalysisResponse | QuestionsResult
+    ): result is QuestionsResult => {
+      return (
+        "questions" in result &&
+        Array.isArray((result as QuestionsResult).questions)
+      );
+    };
+
+    // Type guard for CodeAnalysisResponse
+    const isCodeAnalysisResponse = (
+      result: CodeAnalysisResponse | QuestionsResult
+    ): result is CodeAnalysisResponse => {
+      return "overallFeedback" in result && "issues" in result;
+    };
+
+    if (isQuestionsResult(job.result)) {
       return "questions";
-    } else if (job.result.overallFeedback && job.result.issues) {
+    } else if (isCodeAnalysisResponse(job.result)) {
       return "analysis";
     }
 
