@@ -72,6 +72,7 @@ export function RepoForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [analysis, setAnalysis] = useState<CodeAnalysisResponse | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
   const { toast } = useToast();
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -234,6 +235,15 @@ export function RepoForm() {
 
     const shareUrl = `${window.location.origin}/analysis/${jobId}`;
     navigator.clipboard.writeText(shareUrl);
+    
+    // Set copied state to true
+    setIsCopied(true);
+    
+    // Reset after 2 seconds
+    setTimeout(() => {
+      setIsCopied(false);
+    }, 2000);
+    
     toast({
       title: "Link Copied!",
       description: "Share this link with others to view the analysis results",
@@ -300,7 +310,7 @@ export function RepoForm() {
                 <polyline points="16 6 12 2 8 6" />
                 <line x1="12" y1="2" x2="12" y2="15" />
               </svg>
-              Share Results
+              {isCopied ? "Link Copied!" : "Share Results"}
             </button>
           </div>
           <AnalysisResults
