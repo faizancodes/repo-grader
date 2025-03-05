@@ -14,12 +14,23 @@ export const IGNORED_DIRECTORIES = [
   ".venv",
   ".idea",
   ".vscode",
+  "env",
 ] as const;
 
 export const IGNORED_PATH_PATTERNS = [
   "components/ui",
   "components/UI",
   ".next",
+  "public",
+  "env",
+  "*.DS_Store",
+  "__pycache__",
+  ".pytest_cache",
+  ".venv",
+  ".venv",
+  ".venv",
+  ".venv",
+  ".venv",
 ] as const;
 
 export const IGNORED_FILE_PATTERNS = [
@@ -82,6 +93,14 @@ export const IGNORED_FILE_PATTERNS = [
   "*.docx",
   "*.xlsx",
   "*.pptx",
+  "*.pkl",
+  "*.pickle",
+  "*.joblib",
+  "*.pth",
+  "*.pt",
+  "*.pkl",
+  "*.pickle",
+  "*.DS_Store",
 ] as const;
 
 // 5MB in bytes
