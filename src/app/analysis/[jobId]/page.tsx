@@ -152,6 +152,7 @@ export default async function AnalysisPage({ params }: PageProps) {
             <AnalysisResults
               issues={analysisResult.issues}
               overallFeedback={analysisResult.overallFeedback}
+              repoUrl={job.url}
             />
           )}
 

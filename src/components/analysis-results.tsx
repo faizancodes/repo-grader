@@ -5,6 +5,7 @@ import { CodeAnalysisIssue } from "@/utils/analyzeCode";
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 import { Highlight, themes, type Language } from "prism-react-renderer";
+import { GitHubPRButton } from "./github-pr-button";
 
 function formatCode(code: string) {
   if (!code) return "";
@@ -64,6 +65,7 @@ function CodeBlock({
 interface AnalysisResultsProps {
   issues: CodeAnalysisIssue[];
   overallFeedback: string;
+  repoUrl?: string;
 }
 
 const severityColors = {
@@ -174,6 +176,7 @@ function IssueCard({ issue }: { issue: CodeAnalysisIssue }) {
 export function AnalysisResults({
   issues,
   overallFeedback,
+  repoUrl,
 }: AnalysisResultsProps) {
   if (!issues?.length) return null;
 
@@ -201,25 +204,30 @@ export function AnalysisResults({
                 to review
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3 text-sm">
-              {Object.entries(severityColors).map(([severity, colors]) => (
-                <div
-                  key={severity}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-1.5 rounded-full",
-                    colors.split(" ")[0],
-                    "border",
-                    colors.split(" ")[1]
-                  )}
-                >
-                  <div className={cn("w-2 h-2 rounded-full bg-current")} />
-                  <span className="font-medium">
-                    {severity}
-                    {issuesBySeverity[severity]?.length > 0 &&
-                      ` (${issuesBySeverity[severity].length})`}
-                  </span>
-                </div>
-              ))}
+            <div className="flex flex-wrap items-center gap-3">
+              {repoUrl && (
+                <GitHubPRButton issues={issues} repoUrl={repoUrl} />
+              )}
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                {Object.entries(severityColors).map(([severity, colors]) => (
+                  <div
+                    key={severity}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-1.5 rounded-full",
+                      colors.split(" ")[0],
+                      "border",
+                      colors.split(" ")[1]
+                    )}
+                  >
+                    <div className={cn("w-2 h-2 rounded-full bg-current")} />
+                    <span className="font-medium">
+                      {severity}
+                      {issuesBySeverity[severity]?.length > 0 &&
+                        ` (${issuesBySeverity[severity].length})`}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

@@ -316,6 +316,7 @@ export function RepoForm() {
           <AnalysisResults
             issues={analysis.issues}
             overallFeedback={analysis.overallFeedback}
+            repoUrl={url}
           />
         </div>
       )}

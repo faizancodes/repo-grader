@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster as UIToaster } from "@/components/ui/toaster";
 import { AnalysisSidebar } from "@/components/analysis-sidebar";
 import { cn } from "@/lib/utils";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "GitHub Repo Analyzer",
   description:
     "Get feedback on your code quality and get suggestions on how to improve it.",
@@ -25,7 +25,8 @@ export default function RootLayout({
           <AnalysisSidebar />
           <main className="flex-1">{children}</main>
         </div>
-        <Toaster />
+        <UIToaster />
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );

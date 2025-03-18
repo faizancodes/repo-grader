@@ -7,6 +7,7 @@ import type { Job } from "@/types/jobs";
 import { fetchRepositoryContents } from "@/utils/github";
 import { analyzeCode } from "@/utils/analyzeCode";
 import { getUserId } from "@/utils/session";
+import { createPullRequest } from "@/utils/github-pr";
 
 const logger = new Logger("Server Action: AnalyzeRepo");
 
@@ -120,5 +121,41 @@ export async function testKVConnection(): Promise<{
   } catch (error) {
     logger.error("Error testing KV connection:", error);
     return { error: "Failed to test KV connection" };
+  }
+}
+
+export async function createGithubPR(
+  repoUrl: string,
+  issues: any[],
+  branchName?: string
+): Promise<{
+  success: boolean;
+  message: string;
+  prUrl?: string;
+  error?: string;
+}> {
+  try {
+    if (!repoUrl || !issues || !Array.isArray(issues)) {
+      return {
+        success: false,
+        message: "Invalid input parameters",
+        error: "Missing required parameters",
+      };
+    }
+
+    const userId = await getUserId();
+    logger.info(`Creating GitHub PR for user ${userId}`);
+
+    // Create PR
+    return await createPullRequest(repoUrl, issues, branchName);
+  } catch (error) {
+    logger.error("Error creating GitHub PR:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to create GitHub PR";
+    return {
+      success: false,
+      message: "Failed to create GitHub PR",
+      error: errorMessage,
+    };
   }
 }
