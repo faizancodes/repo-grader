@@ -15,20 +15,24 @@ export async function AnalysisSidebar() {
     error = connectionTest.error;
     console.error("KV connection test failed:", connectionTest.error);
   } else {
-    const result = await listJobs();
-
-    if (result.error) {
-      error = result.error;
-      console.error("Error fetching jobs:", result.error);
-    } else if (result.jobs) {
-      // Validate job data before setting
-      jobsData = result.jobs.filter(job => {
-        const isValid = job && job.id && job.url && job.createdAt && job.status;
-        if (!isValid) {
-          console.warn("Invalid job data:", job);
-        }
-        return isValid;
-      });
+    try {
+      const result = await listJobs();
+      if (result.error) {
+        error = result.error;
+        console.error("Error fetching jobs:", result.error);
+      } else if (result.jobs) {
+        // Validate job data before setting
+        jobsData = result.jobs.filter(job => {
+          const isValid = job && job.id && job.url && job.createdAt && job.status;
+          if (!isValid) {
+            console.warn("Invalid job data:", job);
+          }
+          return isValid;
+        });
+      }
+    } catch (err) {
+      error = err instanceof Error ? err.message : "Failed to fetch jobs";
+      console.error("Error in listJobs:", err);
     }
   }
 

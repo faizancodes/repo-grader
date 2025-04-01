@@ -8,6 +8,7 @@ import { fetchRepositoryContents } from "@/utils/github";
 import { analyzeCode } from "@/utils/analyzeCode";
 import { getUserId } from "@/utils/session";
 import { createPullRequest } from "@/utils/github-pr";
+import { cookies } from "next/headers";
 
 const logger = new Logger("Server Action: AnalyzeRepo");
 
@@ -94,7 +95,14 @@ export async function listJobs(): Promise<{
 }> {
   try {
     logger.info("Starting to list jobs");
-    const userId = await getUserId();
+    const cookieStore = await cookies();
+    const userId = cookieStore.get("user_session_id")?.value;
+
+    if (!userId) {
+      logger.warn("No user session found");
+      return { jobs: [] };
+    }
+
     const jobs = await KVStorage.listJobsForUser(userId);
     logger.info("Successfully listed jobs for user", {
       userId,
