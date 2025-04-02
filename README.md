@@ -1,38 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GitHub Repo Analyzer
+
+A powerful code analysis tool that evaluates your GitHub repositories and provides actionable feedback to improve code quality.
+
+![GitHub Repo Analyzer](https://github.com/user-attachments/assets/200545f0-9335-4676-8f28-f628f0f037dc)
+
+## Features
+
+- **Deep Code Analysis**: Analyzes your repository code for issues across multiple categories:
+  - Architecture & Component Design
+  - State Management & Data Flow
+  - Performance Optimization
+  - Data Fetching & API Integration
+  - TypeScript & Type Safety
+  - Security & Best Practices
+  - Testing & Error Handling
+  - Code Style & Maintainability
+
+- **Severity Ranking**: Issues are categorized by severity (Critical, High, Medium, Low) to help prioritize fixes
+
+- **Actionable Recommendations**: Each identified issue includes:
+  - Detailed explanation
+  - Code snippets highlighting the problem
+  - Specific recommendations for improvement
+  - Example code fixes
+  - Impact assessment
+
+- **Shareable Results**: Easily share analysis results with teammates via a unique URL
+
+- **Multi-Project Support**: Works with both React/TypeScript and Python projects
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **UI**: React 19, Tailwind CSS, Shadcn UI, Radix UI
+- **State Management**: Zustand
+- **AI Integration**: Google Gemini API for code analysis
+- **API Integration**: GitHub API for repository access
+- **Storage**: Upstash Redis for persisting analysis results
 
 ## Getting Started
 
-First, run the development server:
-
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/faizancodes/repo-grader.git
+cd repo-grader
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+Create a `.env` file in the root directory with the following variables:
+```
+# GitHub API credentials
+GITHUB_TOKEN=your_github_token
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Gemini API credentials
+GEMINI_API_KEY=your_gemini_api_key
 
-## Learn More
+# Redis storage
+UPSTASH_REDIS_REST_URL=your_upstash_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. Run the development server:
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser to use the application.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## How It Works
 
-## Deploy on Vercel
+1. Enter a GitHub repository URL in the form
+2. The system fetches the repository contents
+3. Code is analyzed across multiple categories using AI
+4. Results are displayed with detailed feedback and recommendations
+5. Analysis results are stored for future reference and sharing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Contributing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-Test
+## License
+
+[MIT](LICENSE)
